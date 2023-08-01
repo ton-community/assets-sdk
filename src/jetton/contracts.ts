@@ -1,15 +1,14 @@
-import { Address, Cell, beginCell, toNano, Sender, ContractProvider, SendMode, Slice, Transaction, contractAddress } from "ton-core";
+import { Address, Cell, beginCell, toNano, Sender, ContractProvider, SendMode, Slice, Transaction, contractAddress, Contract } from "ton-core";
 import { ExtendedContractProvider } from "../ExtendedContractProvider";
 import { NoSenderError } from "../error";
 import { TransferRequest, BurnRequest, TransferBody, Transfer, RawJettonData, MintRequest } from "./data";
 
-// TODO: explicit value for wallet?
-function mintMessage(params: Exclude<TransferRequest, 'customPayload'>) {
+function mintMessage(params: MintRequest) {
     return beginCell()
         .storeUint(21, 32)
         .storeUint(params.queryId ?? 0, 64)
         .storeAddress(params.to)
-        .storeCoins(params.value ?? toNano('0.02'))
+        .storeCoins(params.walletForwardValue ?? toNano('0.02'))
         .storeRef(beginCell()
             .storeUint(0x178d4519, 32)
             .storeUint(params.queryId ?? 0, 64)
@@ -21,7 +20,7 @@ function mintMessage(params: Exclude<TransferRequest, 'customPayload'>) {
         .endCell();
 }
 
-export class JettonWallet {
+export class JettonWallet implements Contract {
     constructor(public readonly address: Address, public sender?: Sender) {}
 
     async sendTransfer(provider: ContractProvider, request: TransferRequest) {
@@ -29,9 +28,6 @@ export class JettonWallet {
             throw new NoSenderError();
         }
         const response = request.responseDestination ?? this.sender.address;
-        if (response === undefined) {
-            throw new Error('Response destination must be set in the request or Sender\'s address must be known');
-        }
         await provider.internal(this.sender, {
             value: request.value ?? toNano('0.02'),
             bounce: true,
@@ -54,9 +50,6 @@ export class JettonWallet {
             throw new NoSenderError();
         }
         const response = request.responseDestination ?? this.sender.address;
-        if (response === undefined) {
-            throw new Error('Response destination must be set in the request or Sender\'s address must be known');
-        }
         await provider.internal(this.sender, {
             value: request.value ?? toNano('0.02'),
             bounce: true,
@@ -81,7 +74,7 @@ export class JettonWallet {
         const queryId = body.loadUintBig(64);
         const amount = body.loadCoins();
         const destination = body.loadAddress();
-        const responseDestination = body.loadAddress();
+        const responseDestination = body.loadMaybeAddress();
         const customPayload = body.loadMaybeRef();
         const forwardAmount = body.loadCoins();
         const forwardPayloadIsRight = body.loadBoolean();
@@ -113,7 +106,7 @@ export class JettonWallet {
     }
 }
 
-export class Jetton {
+export class Jetton implements Contract {
     constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }) {}
 
     static create(params: {
@@ -160,46 +153,54 @@ export class Jetton {
         })
     }
 
-    async sendMint(provider: ContractProvider, value: bigint, request: MintRequest) {
+    async sendMint(provider: ContractProvider, request: MintRequest) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
         await provider.internal(this.sender, {
-            value,
+            value: request.requestValue ?? toNano('0.02'),
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             bounce: true,
             body: mintMessage(request),
         })
     }
 
-    async sendChangeAdmin(provider: ContractProvider, newAdmin: Address, value: bigint, queryId?: bigint) {
+    async sendChangeAdmin(provider: ContractProvider, params: {
+        newAdmin: Address,
+        value: bigint,
+        queryId?: bigint
+    }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
         await provider.internal(this.sender, {
-            value,
+            value: params.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             bounce: true,
             body: beginCell()
                 .storeUint(3, 32)
-                .storeUint(queryId ?? 0, 64)
-                .storeAddress(newAdmin)
+                .storeUint(params.queryId ?? 0, 64)
+                .storeAddress(params.newAdmin)
                 .endCell(),
         })
     }
 
-    async sendChangeContent(provider: ContractProvider, newContent: Cell, value: bigint, queryId?: bigint) {
+    async sendChangeContent(provider: ContractProvider, params: {
+        newContent: Cell,
+        value: bigint,
+        queryId?: bigint,
+    }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
         await provider.internal(this.sender, {
-            value,
+            value: params.value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             bounce: true,
             body: beginCell()
                 .storeUint(4, 32)
-                .storeUint(queryId ?? 0, 64)
-                .storeRef(newContent)
+                .storeUint(params.queryId ?? 0, 64)
+                .storeRef(params.newContent)
                 .endCell(),
         })
     }

@@ -1,32 +1,38 @@
 import { Address, Cell } from "ton-core"
 
-export interface TransferRequest {
+export interface RequestCommon {
     to: Address,
     amount: bigint,
-    value?: bigint,
     queryId?: bigint,
     responseDestination?: Address,
-    customPayload?: Cell,
     forwardAmount?: bigint,
     forwardPayload?: Cell,
+}
+
+export interface TransferRequest extends RequestCommon {
+    value?: bigint,
+    customPayload?: Cell,
 }
 
 export interface TransferBody {
     queryId: bigint,
     amount: bigint,
     destination: Address,
-    responseDestination: Address,
+    responseDestination: Address | null,
     customPayload: Cell | null,
     forwardAmount: bigint,
     forwardPayload: Cell,
 }
 
-export type Transfer = TransferBody & {
+export interface Transfer extends TransferBody  {
     success: boolean,
     value: bigint,
 }
 
-export type MintRequest = Exclude<TransferRequest, 'customPayload'>
+export interface MintRequest extends RequestCommon {
+    requestValue?: bigint,
+    walletForwardValue?: bigint,
+}
 
 export interface BurnRequest {
     amount: bigint,

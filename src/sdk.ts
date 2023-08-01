@@ -63,7 +63,7 @@ export class GameFiSDK {
     async createJetton(content: JettonContent, options?: {
         onchainContent?: boolean,
         adminAddress?: Address,
-        premint?: MintRequest,
+        premint?: Exclude<MintRequest, 'requestValue'>,
         value?: bigint,
     }) {
         const adminAddress = options?.adminAddress ?? this.sender?.address;
@@ -78,7 +78,10 @@ export class GameFiSDK {
         if (options?.premint === undefined) {
             await jetton.sendDeploy(value);
         } else {
-            await jetton.sendMint(value, options.premint);
+            await jetton.sendMint({
+                ...options.premint,
+                requestValue: value,
+            });
         }
         return jetton;
     }
