@@ -6,6 +6,9 @@
   "scripts": {
     "build": "tsc"
   },
+  "files": [
+    "dist/**/*"
+  ],
   "dependencies": {
     "@orbs-network/ton-access": "^2.3.3",
     "@pinata/sdk": "^2.1.0"
