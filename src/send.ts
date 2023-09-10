@@ -1,5 +1,6 @@
-import { SendMode, MessageRelaxed, Cell, SenderArguments, internal } from "ton-core";
+import { SendMode, MessageRelaxed, Cell, SenderArguments, internal } from "@ton/core";
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
+import { sleep } from "./utils";
 
 export interface Wallet {
     createTransfer(args: {
@@ -9,12 +10,6 @@ export interface Wallet {
         messages: MessageRelaxed[];
         timeout?: number | null;
     }): Cell;
-}
-
-function sleep(timeout: number): Promise<void> {
-    return new Promise((res) => {
-        setTimeout(() => res(), timeout);
-    });
 }
 
 export async function sendAndWait(wallet: Wallet, provider: ExtendedContractProvider, secretKey: Buffer, args: SenderArguments) {

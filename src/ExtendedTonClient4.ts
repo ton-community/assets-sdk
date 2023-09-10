@@ -1,4 +1,4 @@
-import { Address, Cell, Contract, OpenedContract, TonClient4, openContract } from "ton";
+import { Address, Cell, Contract, TonClient4, openContract } from "@ton/ton";
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
 import { ExtendedOpenedContract } from "./api";
 

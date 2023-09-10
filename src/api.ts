@@ -1,4 +1,4 @@
-import { Address, Cell, Contract } from "ton-core";
+import { Address, Cell, Contract } from "@ton/core";
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
 
 export type ExtendedOpenedContract<F> = {

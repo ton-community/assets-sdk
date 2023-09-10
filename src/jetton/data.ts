@@ -1,6 +1,6 @@
-import { Address, Cell } from "ton-core"
+import { Address, Cell } from "@ton/core"
 
-export interface RequestCommon {
+interface JettonRequestCommon {
     to: Address,
     amount: bigint,
     queryId?: bigint,
@@ -9,12 +9,12 @@ export interface RequestCommon {
     forwardPayload?: Cell,
 }
 
-export interface TransferRequest extends RequestCommon {
+export interface JettonTransferRequest extends JettonRequestCommon {
     value?: bigint,
     customPayload?: Cell,
 }
 
-export interface TransferBody {
+export interface JettonTransferBody {
     queryId: bigint,
     amount: bigint,
     destination: Address,
@@ -24,17 +24,17 @@ export interface TransferBody {
     forwardPayload: Cell,
 }
 
-export interface Transfer extends TransferBody  {
+export interface JettonTransfer extends JettonTransferBody  {
     success: boolean,
     value: bigint,
 }
 
-export interface MintRequest extends RequestCommon {
+export interface JettonMintRequest extends JettonRequestCommon {
     requestValue?: bigint,
     walletForwardValue?: bigint,
 }
 
-export interface BurnRequest {
+export interface JettonBurnRequest {
     amount: bigint,
     value?: bigint,
     queryId?: bigint,
@@ -42,7 +42,7 @@ export interface BurnRequest {
     customPayload?: Cell,
 }
 
-export interface RawJettonData {
+export interface JettonRawData {
     totalSupply: bigint,
     mintable: boolean,
     adminAddress: Address | null,

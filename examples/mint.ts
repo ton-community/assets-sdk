@@ -1,5 +1,5 @@
-import { toNano } from "ton-core";
-import { GameFiSDK } from "../src/sdk";
+import { toNano } from "@ton/core";
+import { GameFiSDK, createWalletV4 } from "../src/index";
 
 async function main() {
     const sdk = await GameFiSDK.create({
@@ -8,7 +8,7 @@ async function main() {
             pinataSecretKey: process.env.PINATA_SECRET!,
         },
         api: 'testnet',
-        wallet: process.env.MNEMONIC!,
+        wallet: await createWalletV4(process.env.MNEMONIC!),
     });
 
     console.log('Using wallet', sdk.sender?.address);

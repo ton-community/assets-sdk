@@ -1,14 +1,15 @@
-import { Address, Sender, toNano, beginCell, Dictionary } from "ton-core";
+import { Address, Sender, toNano, beginCell, Contract } from "@ton/core";
 import { PinataStorage, Storage } from "./storage";
 import { API } from "./api";
-import { mnemonicToWalletKey, sha256_sync } from "ton-crypto";
 import { ExtendedTonClient4 } from "./ExtendedTonClient4";
 import { getHttpV4Endpoint } from "@orbs-network/ton-access";
-import { sendAndWait } from "./send";
-import { WalletContractV4 } from "ton";
 import { JettonContent, jettonContentToInternal } from "./jetton/content";
 import { Jetton } from "./jetton/contracts";
-import { MintRequest } from "./jetton/data";
+import { JettonMintRequest } from "./jetton/data";
+import { NftContent, nftContentToInternal } from "./nft/content";
+import { NftCollection, NftMintRequest, SbtCollection, SbtMintRequest } from "./nft/contracts";
+import { ExtendedContractProvider } from "./ExtendedContractProvider";
+import { internalOnchainContentToCell } from "./utils";
 
 export class GameFiSDK {
     constructor(public readonly storage: Storage, public readonly api: API, public readonly sender?: Sender) {}
@@ -19,7 +20,7 @@ export class GameFiSDK {
             pinataSecretKey: string
         } | Storage,
         api: 'mainnet' | 'testnet' | API,
-        wallet?: string | Sender,
+        wallet?: { wallet: Contract, senderCreator: (provider: ExtendedContractProvider) => Sender } | Sender,
     }) {
         let storage: Storage;
         if ('pinataApiKey' in params.storage) {
@@ -38,20 +39,8 @@ export class GameFiSDK {
 
         let sender: Sender | undefined = undefined;
         if (params.wallet !== undefined) {
-            if (typeof params.wallet === 'string') {
-                const mnemonic = params.wallet.split(' ');
-                const wk = await mnemonicToWalletKey(mnemonic);
-                const wallet = WalletContractV4.create({
-                    workchain: 0,
-                    publicKey: wk.publicKey,
-                });
-                const provider = api.provider(wallet.address, wallet.init);
-                sender = {
-                    send: async (args) => {
-                        await sendAndWait(wallet, provider, wk.secretKey, args);
-                    },
-                    address: wallet.address,
-                };
+            if ('senderCreator' in params.wallet) {
+                sender = params.wallet.senderCreator(api.provider(params.wallet.wallet.address, params.wallet.wallet.init));
             } else {
                 sender = params.wallet;
             }
@@ -63,7 +52,7 @@ export class GameFiSDK {
     async createJetton(content: JettonContent, options?: {
         onchainContent?: boolean,
         adminAddress?: Address,
-        premint?: Exclude<MintRequest, 'requestValue'>,
+        premint?: Exclude<JettonMintRequest, 'requestValue'>,
         value?: bigint,
     }) {
         const adminAddress = options?.adminAddress ?? this.sender?.address;
@@ -72,7 +61,7 @@ export class GameFiSDK {
         }
         const jetton = this.api.open(Jetton.create({
             admin: adminAddress,
-            content: await this.jettonContentToCell(content, options?.onchainContent ?? false),
+            content: await this.contentToCell(jettonContentToInternal(content), options?.onchainContent ?? false),
         }, this.sender));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
@@ -86,34 +75,85 @@ export class GameFiSDK {
         return jetton;
     }
 
-    private async jettonContentToCell(content: JettonContent, onchain: boolean) {
-        const internal = jettonContentToInternal(content);
-        if (onchain) {
-            const dict = Dictionary.empty(Dictionary.Keys.Buffer(32), Dictionary.Values.Cell());
-            for (const k in internal) {
-                if ((internal as any)[k] === undefined) {
-                    continue;
-                }
-                const b = beginCell();
-                if (k === 'image_data') {
-                    const chunks = Dictionary.empty(Dictionary.Keys.Uint(32), Dictionary.Values.Cell());
-                    const buf = Buffer.from((internal as any)[k], 'base64');
-                    for (let i = 0; i * 127 < buf.length; i++) {
-                        chunks.set(i, beginCell().storeBuffer(buf.subarray(i * 127, (i + 1) * 127)).endCell());
-                    }
-                    b.storeUint(1, 8).storeDict(chunks).endCell();
-                } else {
-                    b.storeUint(0, 8).storeStringTail((internal as any)[k].toString());
-                }
-                dict.set(sha256_sync(k), b.endCell());
-            }
-            return beginCell().storeUint(0, 8).storeDict(dict).endCell();
-        } else {
-            const contentUrl = await this.storage.uploadFile(Buffer.from(JSON.stringify(internal), 'utf-8'));
-            return beginCell()
-                .storeUint(0x01, 8)
-                .storeStringTail(contentUrl)
-                .endCell();
+    openJetton(address: Address) {
+        return this.api.open(Jetton.open(address, this.sender));
+    }
+
+    async createNftCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
+        onchainContent?: boolean,
+        adminAddress?: Address,
+        premint?: Exclude<NftMintRequest, 'requestValue'>,
+        value?: bigint,
+    }) {
+        const adminAddress = options?.adminAddress ?? this.sender?.address;
+        if (adminAddress === undefined) {
+            throw new Error('Admin address must be defined in options or be available in Sender');
         }
+        const collection = this.api.open(NftCollection.create({
+            admin: adminAddress,
+            content: beginCell()
+            .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
+            .storeRef(beginCell().storeStringTail(content.commonContent))
+            .endCell(),
+        }, this.sender));
+        const value = options?.value ?? toNano('0.05');
+        if (options?.premint === undefined) {
+            await collection.sendDeploy(value);
+        } else {
+            await collection.sendMint({
+                ...options.premint,
+                requestValue: value,
+            });
+        }
+        return collection;
+    }
+
+    openNftCollection(address: Address) {
+        return this.api.open(NftCollection.open(address, this.sender));
+    }
+
+    async createSbtCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
+        onchainContent?: boolean,
+        adminAddress?: Address,
+        premint?: Exclude<SbtMintRequest, 'requestValue'>,
+        value?: bigint,
+    }) {
+        const adminAddress = options?.adminAddress ?? this.sender?.address;
+        if (adminAddress === undefined) {
+            throw new Error('Admin address must be defined in options or be available in Sender');
+        }
+        const collection = this.api.open(SbtCollection.create({
+            admin: adminAddress,
+            content: beginCell()
+                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
+                .storeRef(beginCell().storeStringTail(content.commonContent))
+                .endCell(),
+        }, this.sender));
+        const value = options?.value ?? toNano('0.05');
+        if (options?.premint === undefined) {
+            await collection.sendDeploy(value);
+        } else {
+            await collection.sendMint({
+                ...options.premint,
+                requestValue: value,
+            });
+        }
+        return collection;
+    }
+
+    openSbtCollection(address: Address) {
+        return this.api.open(SbtCollection.open(address, this.sender));
+    }
+
+    private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {
+        const contentUrl = await this.storage.uploadFile(Buffer.from(JSON.stringify(internal), 'utf-8'));
+        return beginCell()
+            .storeUint(0x01, 8)
+            .storeStringTail(contentUrl)
+            .endCell();
+    }
+
+    private async contentToCell(internal: Record<string, string | number | undefined>, onchain: boolean) {
+        return onchain ? internalOnchainContentToCell(internal) : await this.internalOffchainContentToCell(internal);
     }
 }

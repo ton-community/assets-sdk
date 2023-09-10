@@ -1,9 +1,9 @@
-import { Address, Cell, beginCell, toNano, Sender, ContractProvider, SendMode, Slice, Transaction, contractAddress, Contract } from "ton-core";
+import { Address, Cell, beginCell, toNano, Sender, ContractProvider, SendMode, Slice, Transaction, contractAddress, Contract } from "@ton/core";
 import { ExtendedContractProvider } from "../ExtendedContractProvider";
 import { NoSenderError } from "../error";
-import { TransferRequest, BurnRequest, TransferBody, Transfer, RawJettonData, MintRequest } from "./data";
+import { JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer, JettonRawData, JettonMintRequest } from "./data";
 
-function mintMessage(params: MintRequest) {
+function mintMessage(params: JettonMintRequest) {
     return beginCell()
         .storeUint(21, 32)
         .storeUint(params.queryId ?? 0, 64)
@@ -23,7 +23,7 @@ function mintMessage(params: MintRequest) {
 export class JettonWallet implements Contract {
     constructor(public readonly address: Address, public sender?: Sender) {}
 
-    async sendTransfer(provider: ContractProvider, request: TransferRequest) {
+    async sendTransfer(provider: ContractProvider, request: JettonTransferRequest) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
@@ -45,7 +45,7 @@ export class JettonWallet implements Contract {
         });
     }
 
-    async sendBurn(provider: ContractProvider, request: BurnRequest) {
+    async sendBurn(provider: ContractProvider, request: JettonBurnRequest) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
@@ -64,7 +64,7 @@ export class JettonWallet implements Contract {
         });
     }
 
-    static parseTransferBody(body: Cell | Slice): TransferBody {
+    static parseTransferBody(body: Cell | Slice): JettonTransferBody {
         if (body instanceof Cell) {
             body = body.beginParse();
         }
@@ -90,7 +90,7 @@ export class JettonWallet implements Contract {
         };
     }
 
-    static parseTransfer(tx: Transaction): Transfer {
+    static parseTransfer(tx: Transaction): JettonTransfer {
         if (tx.inMessage?.info.type !== 'internal') {
             throw new Error('Message must be internal');
         }
@@ -123,6 +123,10 @@ export class Jetton implements Contract {
         return new Jetton(contractAddress(0, init), sender, init);
     }
 
+    static open(address: Address, sender?: Sender) {
+        return new Jetton(address, sender);
+    }
+
     async getWalletAddress(provider: ContractProvider, owner: Address) {
         return (await provider.get('get_wallet_address', [{ type: 'slice', cell: beginCell().storeAddress(owner).endCell() }])).stack.readAddress();
     }
@@ -131,7 +135,7 @@ export class Jetton implements Contract {
         return provider.reopen(new JettonWallet(await this.getWalletAddress(provider, owner), this.sender));
     }
 
-    async getJettonData(provider: ContractProvider): Promise<RawJettonData> {
+    async getJettonData(provider: ContractProvider): Promise<JettonRawData> {
         const res = (await provider.get('get_jetton_data', [])).stack;
         return {
             totalSupply: res.readBigNumber(),
@@ -153,12 +157,12 @@ export class Jetton implements Contract {
         })
     }
 
-    async sendMint(provider: ContractProvider, request: MintRequest) {
+    async sendMint(provider: ContractProvider, request: JettonMintRequest) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
         await provider.internal(this.sender, {
-            value: request.requestValue ?? toNano('0.02'),
+            value: request.requestValue ?? toNano('0.03'),
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             bounce: true,
             body: mintMessage(request),

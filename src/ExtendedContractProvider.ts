@@ -1,4 +1,4 @@
-import { Contract, ContractGetMethodResult, ContractProvider, Transaction, TupleItem } from "ton-core";
+import { Contract, ContractGetMethodResult, ContractProvider, Transaction, TupleItem } from "@ton/core";
 import { ExtendedOpenedContract } from "./api";
 
 export interface ExtendedContractProvider extends ContractProvider {
