@@ -9,7 +9,7 @@ export { importKey } from './key';
 export { createHighloadV2, createWalletV4 } from './wallets';
 export { HighloadWalletV2 } from './HighloadV2';
 
-export { NftCollection, SbtCollection, NftMintRequest, NftBatchMintRequest, SbtMintRequest, SbtBatchMintRequest } from './nft/contracts';
+export { NftCollection, SbtCollection, NftMintRequest, NftBatchMintRequest, SbtMintRequest, SbtBatchMintRequest, NftTransferRequest } from './nft/contracts';
 export { NftContent } from './nft/content';
 
 export { Jetton, JettonWallet } from './jetton/contracts';

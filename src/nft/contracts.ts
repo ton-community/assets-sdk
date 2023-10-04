@@ -1,5 +1,6 @@
 import { Address, Builder, Cell, Contract, ContractProvider, Dictionary, SendMode, Sender, beginCell, contractAddress, toNano } from "@ton/core";
 import { NoSenderError } from "../error";
+import { ExtendedContractProvider } from "../ExtendedContractProvider";
 
 export type NftItemParams = {
     owner: Address,
@@ -39,6 +40,16 @@ export type NftBatchMintRequest = BatchMintRequest<NftItemParams>;
 
 export type SbtBatchMintRequest = BatchMintRequest<SbtItemParams>;
 
+export type NftTransferRequest = {
+    queryId?: bigint,
+    to: Address,
+    responseDestination?: Address,
+    customPayload?: Cell,
+    forwardAmount?: bigint,
+    forwardPayload?: Cell,
+    value?: bigint,
+};
+
 function nftItemParamsToCell(params: NftItemParams): Cell {
     return beginCell()
         .storeAddress(params.owner)
@@ -62,11 +73,40 @@ function storeSingleMintRequest<T>(request: SingleMintRequest<T>, storeParams: (
     };
 }
 
+export class NftItem implements Contract {
+    constructor(public readonly address: Address, public sender?: Sender) {}
+
+    async sendTransfer(provider: ContractProvider, request: NftTransferRequest) {
+        if (this.sender === undefined) {
+            throw new NoSenderError();
+        }
+        const response = request.responseDestination ?? this.sender.address;
+        await provider.internal(this.sender, {
+            value: request.value ?? toNano('0.03'),
+            bounce: true,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(0x5fcc3d14, 32)
+                .storeUint(request.queryId ?? 0, 64)
+                .storeAddress(request.to)
+                .storeAddress(response)
+                .storeMaybeRef(request.customPayload)
+                .storeCoins(request.forwardAmount ?? 0)
+                .storeMaybeRef(request.forwardPayload)
+                .endCell(),
+        });
+    }
+}
+
 export abstract class NftCollectionBase<T> implements Contract {
     constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }) {}
 
     async getItemAddress(provider: ContractProvider, index: bigint) {
         return (await provider.get('get_nft_address_by_index', [{ type: 'int', value: index }])).stack.readAddress();
+    }
+
+    async getItem(provider: ExtendedContractProvider, index: bigint) {
+        return provider.reopen(new NftItem(await this.getItemAddress(provider, index), this.sender));
     }
 
     abstract paramsToCell(params: T): Cell
@@ -204,7 +244,7 @@ export class SbtCollection extends NftCollectionBase<SbtItemParams> {
     static open(address: Address, sender?: Sender) {
         return new SbtCollection(address, sender);
     }
-    
+
     paramsToCell(params: SbtItemParams): Cell {
         return sbtItemParamsToCell(params);
     }
