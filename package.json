@@ -10,7 +10,7 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.421.0",
+    "@aws-sdk/client-s3": "^3.423.0",
     "@orbs-network/ton-access": "^2.3.3",
     "@pinata/sdk": "^2.1.0"
   },

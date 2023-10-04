@@ -1,7 +1,6 @@
 import PinataClient from '@pinata/sdk';
 import { Readable } from 'stream';
-import { S3 } from "@aws-sdk/client-s3"
-import { AwsCredentialIdentity } from "@aws-sdk/types";
+import { S3 } from '@aws-sdk/client-s3';
 
 export interface Storage {
     uploadFile(contents: Buffer): Promise<string>;
@@ -31,20 +30,20 @@ export class S3Storage implements Storage {
         this.bucket = bucket;
         this.s3 = new S3({
             credentials: {
-                accessKeyId: accessKeyId!,
-                secretAccessKey: secretAccessKey!,
-            } as AwsCredentialIdentity,
+                accessKeyId,
+                secretAccessKey,
+            },
         });
     }
 
     async uploadFile(contents: Buffer): Promise<string> {
-        const key = 'jetton/' + Math.random().toString(36).substring(2)
+        const key = 'jetton/' + Math.random().toString(36).substring(2);
 
         await this.s3.putObject({
             Bucket: this.bucket,
             Key: key,
             Body: contents,
-        })
+        });
 
         return 'https://' + this.bucket + '.s3.amazonaws.com/' + key;
     }
