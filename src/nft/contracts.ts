@@ -1,5 +1,6 @@
 import { Address, Builder, Cell, Contract, ContractProvider, Dictionary, SendMode, Sender, beginCell, contractAddress, toNano } from "@ton/core";
 import { NoSenderError } from "../error";
+import { ExtendedContractProvider } from "../ExtendedContractProvider";
 
 export type NftItemParams = {
     owner: Address,
@@ -102,6 +103,10 @@ export abstract class NftCollectionBase<T> implements Contract {
 
     async getItemAddress(provider: ContractProvider, index: bigint) {
         return (await provider.get('get_nft_address_by_index', [{ type: 'int', value: index }])).stack.readAddress();
+    }
+
+    async getItem(provider: ExtendedContractProvider, index: bigint) {
+        return provider.reopen(new NftItem(await this.getItemAddress(provider, index), this.sender));
     }
 
     abstract paramsToCell(params: T): Cell
