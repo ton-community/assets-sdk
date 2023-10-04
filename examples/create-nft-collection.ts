@@ -1,5 +1,5 @@
-import { Address, toNano } from "@ton/core";
-import { GameFiSDK, createWalletV4 } from "../src/index";
+import { Address, toNano } from '@ton/core';
+import { GameFiSDK, createWalletV4 } from '../src/index";
 
 async function main() {
     const sdk = await GameFiSDK.create({
@@ -15,18 +15,18 @@ async function main() {
 
     const nftCollection = await sdk.createNftCollection({
         collectionContent: {
-            uri: "test-uri",
-            name: "test-name",
-            description: "lorem ipsum",
-            image: "test-image",
+            uri: 'test-uri',
+            name: 'test-name',
+            description: 'lorem ipsum',
+            image: 'test-image',
         },
-        commonContent: "test-content"
+        commonContent: 'test-content'
     }, {
         premint: {
             itemIndex: 1n,
             itemParams: {
-                individualContent: "test",
-                owner: Address.parse("test-address")
+                individualContent: 'test',
+                owner: Address.parse('test-address')
             }
         },
     });

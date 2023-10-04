@@ -1,4 +1,4 @@
-import { Address, toNano } from "@ton/core";
+import { Address } from "@ton/core";
 import { GameFiSDK, createWalletV4 } from "../src/index";
 
 async function main() {
@@ -13,14 +13,13 @@ async function main() {
 
     console.log('Using wallet', sdk.sender?.address);
 
-
-    const nftCollection = await sdk.openNftCollection(Address.parse("my-nft-collection-address"));
+    const nftCollection = sdk.openNftCollection(Address.parse('my-nft-collection-address'));
     nftCollection.sendMint({
         itemIndex: 2n,
         itemParams: {
-            individualContent: "test-2",
-            owner: Address.parse("test-address-2")
-        }
+            individualContent: 'test-content',
+            owner: Address.parse('any-address'),
+        },
     })
 }
 
