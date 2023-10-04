@@ -13,9 +13,12 @@ async function main() {
 
     console.log('Using wallet', sdk.sender?.address);
 
-    const jetton = await sdk.openJetton(Address.parse("my-jetton-address"));
-
-    console.log('Loaded jetton with address', jetton.address);
+    const jetton = await sdk.openJetton(Address.parse('my-jetton-address'));
+    const myWallet = await jetton.getWallet(sdk.sender!.address!!);
+    await (myWallet).sendTransfer({
+        to: Address.parse('any-address'),
+        amount: 10n,
+    })
 }
 
 main();

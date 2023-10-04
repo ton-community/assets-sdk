@@ -13,11 +13,11 @@ async function main() {
 
     console.log('Using wallet', sdk.sender?.address);
 
-    const jetton = await sdk.openJetton(Address.parse("my-jetton-address"));
+    const jetton = await sdk.openJetton(Address.parse('my-jetton-address'));
 
     await jetton.sendMint({
-        to: Address.parse("any-address"),
-        amount: 1200000n
+        to: Address.parse('any-address'),
+        amount: 1200000n,
     })
 }
 
