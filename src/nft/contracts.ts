@@ -39,6 +39,16 @@ export type NftBatchMintRequest = BatchMintRequest<NftItemParams>;
 
 export type SbtBatchMintRequest = BatchMintRequest<SbtItemParams>;
 
+export type NftTransferRequest = {
+    queryId?: bigint,
+    to: Address,
+    responseDestination?: Address,
+    customPayload?: Cell,
+    forwardAmount?: bigint,
+    forwardPayload?: Cell,
+    value?: bigint,
+};
+
 function nftItemParamsToCell(params: NftItemParams): Cell {
     return beginCell()
         .storeAddress(params.owner)
@@ -60,6 +70,31 @@ function storeSingleMintRequest<T>(request: SingleMintRequest<T>, storeParams: (
             .storeCoins(request.value ?? toNano('0.03'))
             .storeRef(request.itemParams instanceof Cell ? request.itemParams : storeParams(request.itemParams))
     };
+}
+
+export class NftItem implements Contract {
+    constructor(public readonly address: Address, public sender?: Sender) {}
+
+    async sendTransfer(provider: ContractProvider, request: NftTransferRequest) {
+        if (this.sender === undefined) {
+            throw new NoSenderError();
+        }
+        const response = request.responseDestination ?? this.sender.address;
+        await provider.internal(this.sender, {
+            value: request.value ?? toNano('0.03'),
+            bounce: true,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(0x5fcc3d14, 32)
+                .storeUint(request.queryId ?? 0, 64)
+                .storeAddress(request.to)
+                .storeAddress(response)
+                .storeMaybeRef(request.customPayload)
+                .storeCoins(request.forwardAmount ?? 0)
+                .storeMaybeRef(request.forwardPayload)
+                .endCell(),
+        });
+    }
 }
 
 export abstract class NftCollectionBase<T> implements Contract {
@@ -204,7 +239,7 @@ export class SbtCollection extends NftCollectionBase<SbtItemParams> {
     static open(address: Address, sender?: Sender) {
         return new SbtCollection(address, sender);
     }
-    
+
     paramsToCell(params: SbtItemParams): Cell {
         return sbtItemParamsToCell(params);
     }
