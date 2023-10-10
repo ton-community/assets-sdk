@@ -1,4 +1,4 @@
-export { GameFiSDK } from './sdk';
+export { GameFiSDK, S3StorageParams, PinataStorageParams } from './sdk';
 
 export { Storage } from './storage';
 

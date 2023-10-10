@@ -1,5 +1,5 @@
 import { Address, Sender, toNano, beginCell, Contract } from "@ton/core";
-import { PinataStorage, Storage } from "./storage";
+import { PinataStorage, S3Storage, Storage } from "./storage";
 import { API } from "./api";
 import { ExtendedTonClient4 } from "./ExtendedTonClient4";
 import { getHttpV4Endpoint } from "@orbs-network/ton-access";
@@ -11,20 +11,30 @@ import { NftCollection, NftMintRequest, SbtCollection, SbtMintRequest } from "./
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
 import { internalOnchainContentToCell } from "./utils";
 
+export interface PinataStorageParams {
+    pinataApiKey: string
+    pinataSecretKey: string
+}
+
+export interface S3StorageParams {
+    s3AccessKeyId: string
+    s3SecretAccessKey: string
+    s3Bucket: string
+}
+
 export class GameFiSDK {
     constructor(public readonly storage: Storage, public readonly api: API, public readonly sender?: Sender) {}
 
     static async create(params: {
-        storage: {
-            pinataApiKey: string
-            pinataSecretKey: string
-        } | Storage,
+        storage: PinataStorageParams | S3StorageParams | Storage,
         api: 'mainnet' | 'testnet' | API,
         wallet?: { wallet: Contract, senderCreator: (provider: ExtendedContractProvider) => Sender } | Sender,
     }) {
         let storage: Storage;
         if ('pinataApiKey' in params.storage) {
             storage = new PinataStorage(params.storage.pinataApiKey, params.storage.pinataSecretKey);
+        } else if ('s3AccessKeyId' in params.storage) {
+            storage = new S3Storage(params.storage.s3AccessKeyId, params.storage.s3SecretAccessKey, params.storage.s3Bucket);
         } else {
             storage = params.storage;
         }
