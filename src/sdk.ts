@@ -11,12 +11,12 @@ import { NftCollection, NftMintRequest, SbtCollection, SbtMintRequest } from "./
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
 import { internalOnchainContentToCell } from "./utils";
 
-interface PinataStorageParams {
+export interface PinataStorageParams {
     pinataApiKey: string
     pinataSecretKey: string
 }
 
-interface S3StorageParams {
+export interface S3StorageParams {
     s3AccessKeyId: string
     s3SecretAccessKey: string
     s3Bucket: string
