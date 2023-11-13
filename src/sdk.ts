@@ -4,10 +4,10 @@ import { API } from "./api";
 import { ExtendedTonClient4 } from "./ExtendedTonClient4";
 import { getHttpV4Endpoint } from "@orbs-network/ton-access";
 import { JettonContent, jettonContentToInternal } from "./jetton/content";
-import { Jetton } from "./jetton/contracts";
+import { Jetton, JettonWallet } from "./jetton/contracts";
 import { JettonMintRequest } from "./jetton/data";
 import { NftContent, nftContentToInternal } from "./nft/content";
-import { NftCollection, NftMintRequest, SbtCollection, SbtMintRequest } from "./nft/contracts";
+import { NftCollection, NftItem, NftMintRequest, SbtCollection, SbtMintRequest } from "./nft/contracts";
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
 import { internalOnchainContentToCell } from "./utils";
 
@@ -153,6 +153,14 @@ export class GameFiSDK {
 
     openSbtCollection(address: Address) {
         return this.api.open(SbtCollection.open(address, this.sender));
+    }
+
+    openJettonWallet(address: Address) {
+        return this.api.open(new JettonWallet(address, this.sender));
+    }
+
+    openNftItem(address: Address) {
+        return this.api.open(new NftItem(address, this.sender));
     }
 
     private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {

@@ -14,6 +14,6 @@ export { NftContent } from './nft/content';
 
 export { Jetton, JettonWallet } from './jetton/contracts';
 export { JettonContent } from './jetton/content';
-export { JettonMintRequest, JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer, JettonRawData } from './jetton/data';
+export { JettonMintRequest, JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer, JettonMinterData } from './jetton/data';
 
 export { NoSenderError } from './error';

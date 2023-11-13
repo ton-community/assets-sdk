@@ -1,4 +1,4 @@
-import { Address, Builder, Cell, Contract, ContractProvider, Dictionary, SendMode, Sender, beginCell, contractAddress, toNano } from "@ton/core";
+import { Address, Builder, Cell, Contract, ContractProvider, Dictionary, SendMode, Sender, Slice, Transaction, beginCell, contractAddress, toNano } from "@ton/core";
 import { NoSenderError } from "../error";
 import { ExtendedContractProvider } from "../ExtendedContractProvider";
 
@@ -50,6 +50,34 @@ export type NftTransferRequest = {
     value?: bigint,
 };
 
+export interface NftTransferBody {
+    queryId: bigint,
+    newOwner: Address,
+    responseDestination: Address | null,
+    customPayload: Cell | null,
+    forwardAmount: bigint,
+    forwardPayload: Cell,
+}
+
+export interface NftTransfer extends NftTransferBody  {
+    success: boolean,
+    value: bigint,
+}
+
+export interface NftItemData {
+    initialized: boolean,
+    index: bigint,
+    collection: Address | null,
+    owner: Address | null,
+    individualContent: Cell | null,
+}
+
+export interface NftCollectionData {
+    nextItemIndex: bigint,
+    content: Cell,
+    owner: Address | null,
+}
+
 function nftItemParamsToCell(params: NftItemParams): Cell {
     return beginCell()
         .storeAddress(params.owner)
@@ -95,6 +123,56 @@ export class NftItem implements Contract {
                 .storeMaybeRef(request.forwardPayload)
                 .endCell(),
         });
+    }
+
+    async getData(provider: ContractProvider): Promise<NftItemData> {
+        const { stack } = await provider.get('get_nft_data', []);
+        return {
+            initialized: stack.readBoolean(),
+            index: stack.readBigNumber(),
+            collection: stack.readAddressOpt(),
+            owner: stack.readAddressOpt(),
+            individualContent: stack.readCellOpt(),
+        };
+    }
+
+    static parseTransferBody(body: Cell | Slice): NftTransferBody {
+        if (body instanceof Cell) {
+            body = body.beginParse();
+        }
+        if (body.loadUint(32) !== 0x0f8a7ea5) {
+            throw new Error('Wrong opcode');
+        }
+        const queryId = body.loadUintBig(64);
+        const newOwner = body.loadAddress();
+        const responseDestination = body.loadMaybeAddress();
+        const customPayload = body.loadMaybeRef();
+        const forwardAmount = body.loadCoins();
+        const forwardPayloadIsRight = body.loadBoolean();
+        const forwardPayload = forwardPayloadIsRight ? body.loadRef() : body.asCell();
+        return {
+            queryId,
+            newOwner,
+            responseDestination,
+            customPayload,
+            forwardAmount,
+            forwardPayload,
+        };
+    }
+
+    static parseTransfer(tx: Transaction): NftTransfer {
+        if (tx.inMessage?.info.type !== 'internal') {
+            throw new Error('Message must be internal');
+        }
+        if (tx.description.type !== 'generic') {
+            throw new Error('Transaction must be generic');
+        }
+        const body = this.parseTransferBody(tx.inMessage.body);
+        return {
+            ...body,
+            success: (tx.description.computePhase.type === 'vm' && tx.description.computePhase.success && tx.description.actionPhase?.success) ?? false,
+            value: tx.inMessage.info.value.coins,
+        };
     }
 }
 
@@ -174,13 +252,65 @@ export abstract class NftCollectionBase<T> implements Contract {
         })
     }
 
-    async getData(provider: ContractProvider) {
+    async sendChangeAdmin(provider: ContractProvider, params: {
+        newAdmin: Address,
+        value: bigint,
+        queryId?: bigint
+    }) {
+        if (this.sender === undefined) {
+            throw new NoSenderError();
+        }
+        await provider.internal(this.sender, {
+            value: params.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            bounce: true,
+            body: beginCell()
+                .storeUint(3, 32)
+                .storeUint(params.queryId ?? 0, 64)
+                .storeAddress(params.newAdmin)
+                .endCell(),
+        })
+    }
+
+    async sendChangeContent(provider: ContractProvider, params: {
+        newContent: Cell,
+        newRoyaltyParams: Cell,
+        value: bigint,
+        queryId?: bigint,
+    }) {
+        if (this.sender === undefined) {
+            throw new NoSenderError();
+        }
+        await provider.internal(this.sender, {
+            value: params.value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            bounce: true,
+            body: beginCell()
+                .storeUint(4, 32)
+                .storeUint(params.queryId ?? 0, 64)
+                .storeRef(params.newContent)
+                .storeRef(params.newRoyaltyParams)
+                .endCell(),
+        })
+    }
+
+    async getData(provider: ContractProvider): Promise<NftCollectionData> {
         const ret = await provider.get('get_collection_data', []);
         return {
             nextItemIndex: ret.stack.readBigNumber(),
             content: ret.stack.readCell(),
             owner: ret.stack.readAddressOpt(),
         };
+    }
+
+    async getItemContent(provider: ContractProvider, index: bigint, individualContent: Cell): Promise<Cell> {
+        return (await provider.get('get_nft_content', [{
+            type: 'int',
+            value: index,
+        }, {
+            type: 'cell',
+            cell: individualContent,
+        }])).stack.readCell();
     }
 }
 
@@ -211,7 +341,7 @@ export class NftCollection extends NftCollectionBase<NftItemParams> {
     static open(address: Address, sender?: Sender) {
         return new NftCollection(address, sender);
     }
-    
+
     paramsToCell(params: NftItemParams): Cell {
         return nftItemParamsToCell(params);
     }

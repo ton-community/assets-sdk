@@ -42,10 +42,17 @@ export interface JettonBurnRequest {
     customPayload?: Cell,
 }
 
-export interface JettonRawData {
+export interface JettonMinterData {
     totalSupply: bigint,
     mintable: boolean,
     adminAddress: Address | null,
     jettonContent: Cell,
     jettonWalletCode: Cell,
+}
+
+export interface JettonWalletData {
+    balance: bigint,
+    owner: Address,
+    jetton: Address,
+    code: Cell,
 }

@@ -1,7 +1,7 @@
 import { Address, Cell, beginCell, toNano, Sender, ContractProvider, SendMode, Slice, Transaction, contractAddress, Contract } from "@ton/core";
 import { ExtendedContractProvider } from "../ExtendedContractProvider";
 import { NoSenderError } from "../error";
-import { JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer, JettonRawData, JettonMintRequest } from "./data";
+import { JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer, JettonMinterData, JettonMintRequest, JettonWalletData } from "./data";
 
 function mintMessage(params: JettonMintRequest) {
     return beginCell()
@@ -22,6 +22,16 @@ function mintMessage(params: JettonMintRequest) {
 
 export class JettonWallet implements Contract {
     constructor(public readonly address: Address, public sender?: Sender) {}
+
+    async getData(provider: ContractProvider): Promise<JettonWalletData> {
+        const { stack } = await provider.get('get_wallet_data', []);
+        return {
+            balance: stack.readBigNumber(),
+            owner: stack.readAddress(),
+            jetton: stack.readAddress(),
+            code: stack.readCell(),
+        };
+    }
 
     async sendTransfer(provider: ContractProvider, request: JettonTransferRequest) {
         if (this.sender === undefined) {
@@ -135,7 +145,7 @@ export class Jetton implements Contract {
         return provider.reopen(new JettonWallet(await this.getWalletAddress(provider, owner), this.sender));
     }
 
-    async getJettonData(provider: ContractProvider): Promise<JettonRawData> {
+    async getData(provider: ContractProvider): Promise<JettonMinterData> {
         const res = (await provider.get('get_jetton_data', [])).stack;
         return {
             totalSupply: res.readBigNumber(),
