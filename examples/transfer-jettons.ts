@@ -1,4 +1,4 @@
-import { Address, toNano } from "@ton/core";
+import { Address } from "@ton/core";
 import { GameFiSDK, createWalletV4 } from "../src/index";
 
 async function main() {
