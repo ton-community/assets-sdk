@@ -12,6 +12,7 @@ export { HighloadWalletV2 } from './HighloadV2';
 export { NftCollection } from './nft/NftCollection';
 export { SbtCollection } from './nft/SbtCollection';
 export { NftItem } from './nft/NftItem';
+export { NftSale } from './nft/NftSale';
 export { NftMintRequest, NftBatchMintRequest, SbtMintRequest, SbtBatchMintRequest, NftTransferRequest } from './nft/data';
 export { NftContent } from './nft/content';
 

@@ -75,3 +75,17 @@ export interface NftCollectionData {
     content: Cell,
     owner: Address | null,
 }
+
+export interface NftSaleData {
+    type: number,
+    isComplete: boolean,
+    createdAt: number,
+    marketplace: Address,
+    nft: Address,
+    nftOwner: Address | null,
+    fullPrice: bigint,
+    marketplaceFeeTo: Address,
+    marketplaceFee: bigint,
+    royaltyTo: Address,
+    royalty: bigint,
+}
