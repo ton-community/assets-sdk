@@ -4,12 +4,16 @@ import { API } from "./api";
 import { ExtendedTonClient4 } from "./ExtendedTonClient4";
 import { getHttpV4Endpoint } from "@orbs-network/ton-access";
 import { JettonContent, jettonContentToInternal } from "./jetton/content";
-import { Jetton, JettonWallet } from "./jetton/contracts";
 import { JettonMintRequest } from "./jetton/data";
 import { NftContent, nftContentToInternal } from "./nft/content";
-import { NftCollection, NftItem, NftMintRequest, SbtCollection, SbtMintRequest } from "./nft/contracts";
 import { ExtendedContractProvider } from "./ExtendedContractProvider";
 import { internalOnchainContentToCell } from "./utils";
+import { JettonWallet } from "./jetton/JettonWallet";
+import { Jetton } from "./jetton/Jetton";
+import { NftCollection } from "./nft/NftCollection";
+import { NftItem } from "./nft/NftItem";
+import { SbtCollection } from "./nft/SbtCollection";
+import { NftMintRequest, SbtMintRequest } from "./nft/data";
 
 export interface PinataStorageParams {
     pinataApiKey: string

@@ -22,3 +22,5 @@ export { JettonContent } from './jetton/content';
 export { JettonMintRequest, JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer, JettonMinterData } from './jetton/data';
 
 export { NoSenderError } from './error';
+
+export { TonAPI } from './TonAPI';
