@@ -152,6 +152,33 @@ const AccountEventsGeneric = <T extends z.ZodTypeAny>(t: T) => z.object({
 
 const AccountEventsNftItemTransfer = AccountEventsGeneric(AccountEventNftItemTransfer);
 
+const TokenRates = z.object({
+    prices: z.optional(z.record(z.number())),
+    diff_24h: z.optional(z.record(z.string())),
+    diff_7d: z.optional(z.record(z.string())),
+    diff_30d: z.optional(z.record(z.string())),
+});
+
+const JettonPreview = z.object({
+    address: Address,
+    name: z.string(),
+    symbol: z.string(),
+    decimals: zBigint,
+    image: z.string(),
+    verification: JettonVerificationType,
+});
+
+const JettonBalance = z.object({
+    balance: zBigint,
+    price: z.optional(TokenRates),
+    wallet_address: AccountAddress,
+    jetton: JettonPreview,
+});
+
+const JettonBalances = z.object({
+    balances: z.array(JettonBalance),
+});
+
 const rawAddress = (address: TONAddress | string) => {
     return typeof address === 'string' ? address : address.toRawString();
 };
@@ -237,5 +264,29 @@ export class TonAPI {
                 ...params,
             },
         })).data);
+    }
+
+    async getAccountNfts(account: TONAddress | string, params?: {
+        collection?: TONAddress | string,
+        limit?: number,
+        offset?: number,
+        indirect_ownership?: boolean,
+    }) {
+        return NftItems.parse((await this.instance.get(`/v2/accounts/${rawAddress(account)}/nfts`, {
+            params: {
+                ...params,
+                collection: params?.collection === undefined ? undefined : rawAddress(params.collection),
+            },
+        })).data).nft_items;
+    }
+
+    async getAccountJettons(account: TONAddress | string, params?: {
+        currencies?: string[],
+    }) {
+        return JettonBalances.parse((await this.instance.get(`/v2/accounts/${rawAddress(account)}/jettons`, {
+            params: {
+                currencies: params?.currencies === undefined ? undefined : params.currencies.join(','),
+            },
+        })).data).balances;
     }
 }
