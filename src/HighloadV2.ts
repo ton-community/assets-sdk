@@ -3,6 +3,8 @@ import { sign } from "@ton/crypto";
 import { sleep } from "./utils";
 
 export class HighloadWalletV2 implements Contract {
+    static code = Cell.fromBase64('te6cckEBCQEA5QABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQHq8oMI1xgg0x/TP/gjqh9TILnyY+1E0NMf0z/T//QE0VNggED0Dm+hMfJgUXO68qIH+QFUEIf5EPKjAvQE0fgAf44WIYAQ9HhvpSCYAtMH1DAB+wCRMuIBs+ZbgyWhyEA0gED0Q4rmMQHIyx8Tyz/L//QAye1UCAAE0DACASAGBwAXvZznaiaGmvmOuF/8AEG+X5dqJoaY+Y6Z/p/5j6AmipEEAgegc30JjJLb/JXdHxQANCCAQPSWb6VsEiCUMFMDud4gkzM2AZJsIeKzn55UWg==');
+
     constructor(public readonly address: Address, public readonly init?: { code: Cell, data: Cell }, public readonly walletId: number = 0) {}
 
     static create(params: {
@@ -17,7 +19,7 @@ export class HighloadWalletV2 implements Contract {
             .storeBuffer(params.publicKey, 32)
             .storeDict(null)
             .endCell();
-        const init = { code, data };
+        const init = { code: HighloadWalletV2.code, data };
         return new HighloadWalletV2(contractAddress(params.workchain, init), init, walletId);
     }
 
@@ -127,5 +129,3 @@ export class HighloadWalletV2 implements Contract {
         }
     }
 }
-
-const code = Cell.fromBase64('te6cckEBCQEA5QABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQHq8oMI1xgg0x/TP/gjqh9TILnyY+1E0NMf0z/T//QE0VNggED0Dm+hMfJgUXO68qIH+QFUEIf5EPKjAvQE0fgAf44WIYAQ9HhvpSCYAtMH1DAB+wCRMuIBs+ZbgyWhyEA0gED0Q4rmMQHIyx8Tyz/L//QAye1UCAAE0DACASAGBwAXvZznaiaGmvmOuF/8AEG+X5dqJoaY+Y6Z/p/5j6AmipEEAgegc30JjJLb/JXdHxQANCCAQPSWb6VsEiCUMFMDud4gkzM2AZJsIeKzn55UWg==');

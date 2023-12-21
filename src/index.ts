@@ -1,8 +1,9 @@
 export { GameFiSDK, S3StorageParams, PinataStorageParams } from './sdk';
 
-export { Storage } from './storage';
+export { Storage, PinataStorage, S3Storage } from './storage';
 
 export { API, ExtendedOpenedContract } from './api';
+export { ExtendedTonClient4 } from './ExtendedTonClient4';
 export { ExtendedContractProvider } from './ExtendedContractProvider';
 
 export { importKey } from './key';

@@ -23,7 +23,7 @@ export class JettonWallet implements Contract {
         }
         const response = request.responseDestination ?? this.sender.address;
         await provider.internal(this.sender, {
-            value: request.value ?? toNano('0.02'),
+            value: request.value ?? toNano('0.05'),
             bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell()
