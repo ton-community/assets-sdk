@@ -3,17 +3,17 @@
   "version": "0.0.3",
   "main": "dist/index.js",
   "types": "./dist",
-  "files": [
-    "dist/**/*"
-  ],
+  "license": "MIT",
   "bin": {
     "gamefi-sdk": "./dist/cli/index.js"
   },
-  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w"
   },
+  "files": [
+    "dist/**/*"
+  ],
   "dependencies": {
     "@aws-sdk/client-s3": "^3.423.0",
     "@orbs-network/ton-access": "^2.3.3",
