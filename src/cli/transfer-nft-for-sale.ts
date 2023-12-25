@@ -3,7 +3,7 @@ import { Address, toNano } from "@ton/core";
 import { createEnv } from "./common";
 import inquirer from 'inquirer';
 
-async function main() {
+export async function main() {
     const { sdk } = await createEnv();
 
     const q = await inquirer.prompt([{
@@ -23,7 +23,5 @@ async function main() {
         forwardAmount: toNano('1'),
     });
 
-    console.log('Your item has been transfered!');
+    console.log('Your item has been transferred!');
 }
-
-main();

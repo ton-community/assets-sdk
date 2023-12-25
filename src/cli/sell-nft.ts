@@ -3,7 +3,7 @@ import { createEnv, printAddress } from './common';
 import { Address, beginCell, toNano } from '@ton/core';
 import inquirer from 'inquirer';
 
-async function main() {
+export async function main() {
     const { sdk, network } = await createEnv();
 
     const q = await inquirer.prompt([{
@@ -42,5 +42,3 @@ async function main() {
 
     console.log('Or using the transfer-nft-for-sale.ts script');
 }
-
-main();

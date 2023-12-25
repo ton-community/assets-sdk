@@ -1,9 +1,8 @@
-import 'dotenv/config';
 import { createEnv } from "./common";
 import inquirer from 'inquirer';
 import { Address } from '@ton/core';
 
-async function main() {
+export async function main() {
     const { sdk } = await createEnv();
 
     const q = await inquirer.prompt([{
@@ -24,7 +23,5 @@ async function main() {
         amount: BigInt(q.amount),
     });
 
-    console.log('Your jettons have been minted!');
+    console.log('Your jetton have been minted!');
 }
-
-main();

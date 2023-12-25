@@ -1,8 +1,7 @@
-import 'dotenv/config';
 import { createEnv, printAddress } from './common';
 import { fromNano } from '@ton/core';
 
-async function main() {
+export async function main() {
     const { client, wallet, network } = await createEnv();
 
     const address = wallet.wallet.address;
@@ -13,5 +12,3 @@ async function main() {
 
     console.log(`Your wallet is ${state.account.state.type} and has ${fromNano(state.account.balance.coins)} TON`);
 }
-
-main();

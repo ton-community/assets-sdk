@@ -1,5 +1,5 @@
 import { Address } from "@ton/core";
-import { ExtendedTonClient4, GameFiSDK, PinataStorage, S3Storage, createHighloadV2, createWalletV4 } from "@ton-community/gamefi-sdk";
+import { ExtendedTonClient4, GameFiSDK, PinataStorage, S3Storage, createHighloadV2, createWalletV4 } from "..";
 import { getHttpV4Endpoint } from '@orbs-network/ton-access';
 
 export async function createWallet(type: string, mnemonic: string | string[]) {

@@ -3,7 +3,7 @@ import { mnemonicNew } from '@ton/crypto';
 import { writeFile } from 'fs/promises';
 import { createWallet, printAddress } from './common';
 
-async function main() {
+export async function main() {
     const q = await inquirer.prompt([{
         name: 'network',
         message: 'Which network to use?',
@@ -69,5 +69,3 @@ async function main() {
 
     printAddress(address, q.network);
 }
-
-main();

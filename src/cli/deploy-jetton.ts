@@ -1,9 +1,8 @@
-import 'dotenv/config';
 import { createEnv, printAddress } from "./common";
 import inquirer from 'inquirer';
 import { readFile } from 'fs/promises';
 
-async function main() {
+export async function main() {
     const { sdk, network } = await createEnv();
 
     const q = await inquirer.prompt([{
@@ -45,5 +44,3 @@ async function main() {
 
     printAddress(address, network, 'jetton');
 }
-
-main();

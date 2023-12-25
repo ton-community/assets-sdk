@@ -1,9 +1,8 @@
-import 'dotenv/config';
 import { Address } from "@ton/core";
 import { createEnv } from "./common";
 import inquirer from 'inquirer';
 
-async function main() {
+export async function main() {
     const { sdk } = await createEnv();
 
     const q = await inquirer.prompt([{
@@ -31,7 +30,5 @@ async function main() {
         amount: BigInt(q.amount),
     });
 
-    console.log('Your jettons have been transfered!');
+    console.log('Your jetton have been transferred!');
 }
-
-main();

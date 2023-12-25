@@ -1,9 +1,8 @@
-import 'dotenv/config';
 import { Address } from "@ton/core";
 import { createEnv } from "./common";
 import inquirer from 'inquirer';
 
-async function main() {
+export async function main() {
     const { sdk } = await createEnv();
 
     const q = await inquirer.prompt([{
@@ -20,7 +19,5 @@ async function main() {
         to: Address.parse(q.recipient),
     });
 
-    console.log('Your item has been transfered!');
+    console.log('Your item has been transferred!');
 }
-
-main();

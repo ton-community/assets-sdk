@@ -134,6 +134,33 @@ You can also use the `NftItem` class to do the following:
 - `parseTransferBody` - parse the transfer transaction message body to retrieve its parameters
 - `parseTransfer` - same as the above, but parse the whole transaction to retrieve additional parameters
 
+## CLI usage
+
+It's also an option to use the SDK as a CLI tool. To do that, pick one of the following options:
+```bash
+# global installation
+npm i -g @ton-community/gamefi-sdk
+gamefi-sdk COMMAND
+
+# local installation
+npm install --save-dev @ton-community/gamefi-sdk
+npx gamefi-sdk COMMAND
+```
+
+### Commands
+
+> Before running other commands, please run `gamefi-sdk setup-env` first.
+
+| Command | Description |
+| --- | --- |
+| `setup-env` | Setup the environment for your project. It setups network type, wallet and storage - Pinata or S3 |
+| `deploy-jetton` | Create and deploy own token to implement game currency. | Deploy the NFT collection contract. |
+| `get-wallet-state` | Print your wallet type and balance. |
+| `mint-jetton` | Mint jetton to the wallet. |
+| `mint-nft` | Mint NFT to the wallet. |
+| `transfer-jetton` | Transfer previously minted jetton to another wallet. |
+| `transfer-nft` | Transfer previously minted NFT to another wallet. |
+
 ## License
 
 [MIT](./LICENSE)
