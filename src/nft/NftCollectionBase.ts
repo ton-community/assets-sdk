@@ -3,6 +3,8 @@ import { ExtendedContractProvider } from "../ExtendedContractProvider";
 import { NoSenderError } from "../error";
 import { NftItem } from "./NftItem";
 import { MintRequest, BatchMintRequest, SingleMintRequest, NftCollectionData } from "./data";
+import { ContentResolver, loadFullContent } from "../content";
+import { parseNftContent } from "./content";
 
 function storeSingleMintRequest<T>(request: SingleMintRequest<T>, storeParams: (params: T) => Cell): (builder: Builder) => void {
     return (builder: Builder) => {
@@ -15,7 +17,7 @@ function storeSingleMintRequest<T>(request: SingleMintRequest<T>, storeParams: (
 export abstract class NftCollectionBase<T> implements Contract {
     static code = Cell.fromBase64('te6cckECEwEAAf4AART/APSkE/S88sgLAQIBYgIDAgLNBAUCASANDgPr0QY4BIrfAA6GmBgLjYSK3wfSAYAOmP6Z/2omh9IGmf6mpqGEEINJ6cqClAXUcUG6+CgOhBCFRlgFa4QAhkZYKoAueLEn0BCmW1CeWP5Z+A54tkwCB9gHAbKLnjgvlwyJLgAPGBEuABcYEZAmAB8YEvgsIH+XhAYHCAIBIAkKAGA1AtM/UxO78uGSUxO6AfoA1DAoEDRZ8AaOEgGkQ0PIUAXPFhPLP8zMzMntVJJfBeIApjVwA9QwjjeAQPSWb6UgjikGpCCBAPq+k/LBj96BAZMhoFMlu/L0AvoA1DAiVEsw8AYjupMCpALeBJJsIeKz5jAyUERDE8hQBc8WE8s/zMzMye1UACgB+kAwQUTIUAXPFhPLP8zMzMntVAIBIAsMAD1FrwBHAh8AV3gBjIywVYzxZQBPoCE8trEszMyXH7AIAC0AcjLP/gozxbJcCDIywET9AD0AMsAyYAAbPkAdMjLAhLKB8v/ydCACASAPEAAlvILfaiaH0gaZ/qamoYLehqGCxABDuLXTHtRND6QNM/1NTUMBAkXwTQ1DHUMNBxyMsHAc8WzMmAIBIBESAC+12v2omh9IGmf6mpqGDYg6GmH6Yf9IBhAALbT0faiaH0gaZ/qamoYCi+CeAI4APgCwWurO9Q==');
 
-    constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }) {}
+    constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }, public readonly contentResolver?: ContentResolver) {}
 
     async getItemAddress(provider: ContractProvider, index: bigint) {
         return (await provider.get('get_nft_address_by_index', [{ type: 'int', value: index }])).stack.readAddress();
@@ -139,6 +141,14 @@ export abstract class NftCollectionBase<T> implements Contract {
             content: ret.stack.readCell(),
             owner: ret.stack.readAddressOpt(),
         };
+    }
+
+    async getContent(provider: ContractProvider) {
+        if (this.contentResolver === undefined) {
+            throw new Error('No content resolver');
+        }
+        const data = await this.getData(provider);
+        return parseNftContent(await loadFullContent(data.content, this.contentResolver));
     }
 
     async getItemContent(provider: ContractProvider, index: bigint, individualContent: Cell): Promise<Cell> {

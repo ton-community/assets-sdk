@@ -14,6 +14,7 @@ import { NftCollection } from "./nft/NftCollection";
 import { NftItem } from "./nft/NftItem";
 import { SbtCollection } from "./nft/SbtCollection";
 import { NftMintRequest, SbtMintRequest } from "./nft/data";
+import { ContentResolver, DefaultContentResolver } from "./content";
 
 export interface PinataStorageParams {
     pinataApiKey: string
@@ -27,12 +28,13 @@ export interface S3StorageParams {
 }
 
 export class GameFiSDK {
-    constructor(public readonly storage: Storage, public readonly api: API, public readonly sender?: Sender) {}
+    constructor(public readonly storage: Storage, public readonly api: API, public readonly sender?: Sender, public readonly contentResolver?: ContentResolver) {}
 
     static async create(params: {
         storage: PinataStorageParams | S3StorageParams | Storage,
         api: 'mainnet' | 'testnet' | API,
         wallet?: { wallet: Contract, senderCreator: (provider: ExtendedContractProvider) => Sender } | Sender,
+        contentResolver?: ContentResolver,
     }) {
         let storage: Storage;
         if ('pinataApiKey' in params.storage) {
@@ -60,7 +62,7 @@ export class GameFiSDK {
             }
         }
 
-        return new GameFiSDK(storage, api, sender);
+        return new GameFiSDK(storage, api, sender, params.contentResolver ?? new DefaultContentResolver());
     }
 
     async createJetton(content: JettonContent, options?: {
@@ -76,7 +78,7 @@ export class GameFiSDK {
         const jetton = this.api.open(Jetton.create({
             admin: adminAddress,
             content: await this.contentToCell(jettonContentToInternal(content), options?.onchainContent ?? false),
-        }, this.sender));
+        }, this.sender, this.contentResolver));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
             await jetton.sendDeploy(value);
@@ -90,7 +92,7 @@ export class GameFiSDK {
     }
 
     openJetton(address: Address) {
-        return this.api.open(Jetton.open(address, this.sender));
+        return this.api.open(Jetton.open(address, this.sender, this.contentResolver));
     }
 
     async createNftCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
@@ -109,7 +111,7 @@ export class GameFiSDK {
             .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
             .storeRef(beginCell().storeStringTail(content.commonContent))
             .endCell(),
-        }, this.sender));
+        }, this.sender, this.contentResolver));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
             await collection.sendDeploy(value);
@@ -123,7 +125,7 @@ export class GameFiSDK {
     }
 
     openNftCollection(address: Address) {
-        return this.api.open(NftCollection.open(address, this.sender));
+        return this.api.open(NftCollection.open(address, this.sender, this.contentResolver));
     }
 
     async createSbtCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
@@ -142,7 +144,7 @@ export class GameFiSDK {
                 .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
                 .storeRef(beginCell().storeStringTail(content.commonContent))
                 .endCell(),
-        }, this.sender));
+        }, this.sender, this.contentResolver));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
             await collection.sendDeploy(value);
@@ -156,7 +158,7 @@ export class GameFiSDK {
     }
 
     openSbtCollection(address: Address) {
-        return this.api.open(SbtCollection.open(address, this.sender));
+        return this.api.open(SbtCollection.open(address, this.sender, this.contentResolver));
     }
 
     openJettonWallet(address: Address) {
@@ -164,7 +166,7 @@ export class GameFiSDK {
     }
 
     openNftItem(address: Address) {
-        return this.api.open(new NftItem(address, this.sender));
+        return this.api.open(new NftItem(address, this.sender, this.contentResolver));
     }
 
     private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {

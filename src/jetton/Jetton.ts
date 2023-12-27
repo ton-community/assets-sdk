@@ -3,6 +3,8 @@ import { JettonWallet } from "./JettonWallet";
 import { ExtendedContractProvider } from "../ExtendedContractProvider";
 import { NoSenderError } from "../error";
 import { JettonMintRequest, JettonMinterData } from "./data";
+import { ContentResolver, loadFullContent } from "../content";
+import { parseJettonContent } from "./content";
 
 function mintMessage(params: JettonMintRequest) {
     return beginCell()
@@ -24,12 +26,12 @@ function mintMessage(params: JettonMintRequest) {
 export class Jetton implements Contract {
     static code = Cell.fromBase64('te6ccgECDgEAAqMAART/APSkE/S88sgLAQIBYgIDAgLMBAUCA3pgDA0B9dkGOASS+B8ADoaYGAuNhJL4HwfSB9IBj9ABi465D9ABj9ABg51NoAAWmP6Z/2omh9AH0gamoYQAqpOF1HGZqamxsommOC+XAkgX0gfQBqGBBoQDBrkP0AGBKIGigheASKUCgZ5CgCfQEsZ4tmZmT2qnBBCD3uy+8pOF1AYAk7PwUIgG4KhAJqgoB5CgCfQEsZ4sA54tmZJFkZYCJegB6AGWAZJB8gDg6ZGWBZQPl/+ToO8AMZGWCrGeLKAJ9AQnltYlmZmS4/YBBPSO4DY3NwH6APpA+ChUEgZwVCATVBQDyFAE+gJYzxYBzxbMySLIywES9AD0AMsAyfkAcHTIywLKB8v/ydBQBscF8uBKoQNFRchQBPoCWM8WzMzJ7VQB+kAwINcLAcMAkVvjDeCCECx2uXNScLrjAjU3NyPAA+MCNQLABAcICQoAPoIQ1TJ223CAEMjLBVADzxYi+gISy2rLH8s/yYBC+wAB/jZfA4IImJaAFaAVvPLgSwL6QNMAMJXIIc8WyZFt4oIQ0XNUAHCAGMjLBVAFzxYk+gIUy2oTyx8Uyz8j+kQwcLqOM/goRANwVCATVBQDyFAE+gJYzxYBzxbMySLIywES9AD0AMsAyfkAcHTIywLKB8v/ydDPFpZsInABywHi9AALADQzUDXHBfLgSQP6QDBZyFAE+gJYzxbMzMntVABCjhhRJMcF8uBJ1DBDAMhQBPoCWM8WzMzJ7VTgXwWED/LwAArJgED7AAB9rbz2omh9AH0gamoYNhj8FAC4KhAJqgoB5CgCfQEsZ4sA54tmZJFkZYCJegB6AGWAZPyAODpkZYFlA+X/5OhAAB+vFvaiaH0AfSBqahg/qpBA');
 
-    constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }) {}
+    constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }, public readonly contentResolver?: ContentResolver) {}
 
     static create(params: {
         admin: Address,
         content: Cell,
-    }, sender?: Sender) {
+    }, sender?: Sender, contentResolver?: ContentResolver) {
         const data = beginCell()
             .storeCoins(0)
             .storeAddress(params.admin)
@@ -37,11 +39,11 @@ export class Jetton implements Contract {
             .storeRef(JettonWallet.code)
             .endCell();
         const init = { data, code: Jetton.code };
-        return new Jetton(contractAddress(0, init), sender, init);
+        return new Jetton(contractAddress(0, init), sender, init, contentResolver);
     }
 
-    static open(address: Address, sender?: Sender) {
-        return new Jetton(address, sender);
+    static open(address: Address, sender?: Sender, contentResolver?: ContentResolver) {
+        return new Jetton(address, sender, undefined, contentResolver);
     }
 
     async getWalletAddress(provider: ContractProvider, owner: Address) {
@@ -61,6 +63,14 @@ export class Jetton implements Contract {
             jettonContent: res.readCell(),
             jettonWalletCode: res.readCell(),
         };
+    }
+
+    async getContent(provider: ContractProvider) {
+        if (this.contentResolver === undefined) {
+            throw new Error('No content resolver');
+        }
+        const data = await this.getData(provider);
+        return parseJettonContent(await loadFullContent(data.jettonContent, this.contentResolver));
     }
 
     async sendDeploy(provider: ContractProvider, value: bigint) {

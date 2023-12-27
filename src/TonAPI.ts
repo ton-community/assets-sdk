@@ -5,6 +5,7 @@ import axios, { AxiosInstance } from 'axios';
 const Address = z.string().transform(v => TONAddress.parseRaw(v));
 const HexBuffer = z.string().transform(v => Buffer.from(v, 'hex'));
 const zBigint = z.union([z.number(), z.string()]).transform(v => BigInt(v));
+const zStrnum = z.union([z.number(), z.string()]).transform(v => Number(v));
 
 const ImagePreview = z.object({
     resolution: z.string(),
@@ -72,7 +73,7 @@ const JettonMetadata = z.object({
     address: Address,
     name: z.string(),
     symbol: z.string(),
-    decimals: zBigint,
+    decimals: zStrnum,
     image: z.optional(z.string()),
     description: z.optional(z.string()),
     social: z.optional(z.array(z.string())),
@@ -163,7 +164,7 @@ const JettonPreview = z.object({
     address: Address,
     name: z.string(),
     symbol: z.string(),
-    decimals: zBigint,
+    decimals: zStrnum,
     image: z.string(),
     verification: JettonVerificationType,
 });
