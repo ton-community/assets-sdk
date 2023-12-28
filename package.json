@@ -1,6 +1,6 @@
 {
   "name": "@ton-community/gamefi-sdk",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
@@ -22,9 +22,9 @@
     "@ton/ton": ">=13.5.1"
   },
   "devDependencies": {
-    "@ton/core": "^0.52.0",
+    "@ton/core": "^0.53.0",
     "@ton/crypto": "^3.2.0",
-    "@ton/ton": "^13.5.1",
+    "@ton/ton": "^13.9.0",
     "@types/node": "^20.3.2",
     "ton-crypto": "^3.2.0",
     "ts-node": "^10.9.1",

@@ -15,6 +15,7 @@ import { NftItem } from "./nft/NftItem";
 import { SbtCollection } from "./nft/SbtCollection";
 import { NftMintRequest, SbtMintRequest } from "./nft/data";
 import { ContentResolver, DefaultContentResolver } from "./content";
+import { NftSale } from "./nft/NftSale";
 
 export interface PinataStorageParams {
     pinataApiKey: string
@@ -167,6 +168,43 @@ export class GameFiSDK {
 
     openNftItem(address: Address) {
         return this.api.open(new NftItem(address, this.sender, this.contentResolver));
+    }
+
+    async createNftSale(params: {
+        createdAt?: number,
+        marketplace?: Address | null,
+        nft: Address,
+        fullPrice: bigint,
+        marketplaceFeeTo?: Address | null,
+        marketplaceFee?: bigint,
+        royaltyTo?: Address | null,
+        royalty?: bigint,
+        canDeployByExternal?: boolean,
+        value?: bigint,
+        queryId?: bigint,
+    }) {
+        const marketplaceAddress = params.marketplace ?? this.sender?.address
+        if (marketplaceAddress === undefined) {
+            throw new Error('Marketplace address must be defined in options or be available in Sender');
+        }
+        const sale = this.api.open(NftSale.create({
+            createdAt: params.createdAt ?? Math.floor(Date.now() / 1000),
+            marketplace: params.marketplace ?? null,
+            nft: params.nft,
+            fullPrice: params.fullPrice,
+            marketplaceFeeTo: params.marketplaceFeeTo ?? null,
+            marketplaceFee: params.marketplaceFee ?? 0n,
+            royaltyTo: params.royaltyTo ?? null,
+            royalty: params.royalty ?? 0n,
+            canDeployByExternal: params.canDeployByExternal ?? true,
+        }, this.sender));
+        const value = params.value ?? toNano('0.05');
+        await sale.sendTopup(value, params.queryId);
+        return sale;
+    }
+
+    openNftSale(address: Address) {
+        return this.api.open(NftSale.open(address, this.sender));
     }
 
     private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {

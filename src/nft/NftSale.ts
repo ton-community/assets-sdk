@@ -9,12 +9,12 @@ export class NftSale implements Contract {
 
     static create(params: {
         createdAt: number,
-        marketplace: Address,
+        marketplace: Address | null,
         nft: Address,
         fullPrice: bigint,
-        marketplaceFeeTo: Address,
+        marketplaceFeeTo: Address | null,
         marketplaceFee: bigint,
-        royaltyTo: Address,
+        royaltyTo: Address | null,
         royalty: bigint,
         canDeployByExternal: boolean,
     }, sender?: Sender) {
@@ -34,6 +34,10 @@ export class NftSale implements Contract {
             .endCell();
         const init = { data, code: NftSale.code };
         return new NftSale(contractAddress(0, init), sender, init);
+    }
+
+    static open(address: Address, sender?: Sender) {
+        return new NftSale(address, sender);
     }
 
     async sendTopup(provider: ContractProvider, value: bigint, queryId?: bigint) {

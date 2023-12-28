@@ -1036,10 +1036,10 @@
     "@smithy/types" "^2.3.4"
     tslib "^2.5.0"
 
-"@ton/core@^0.52.0":
-  version "0.52.0"
-  resolved "https://registry.npmjs.org/@ton/core/-/core-0.52.0.tgz"
-  integrity sha512-8U7Ntjs2XCIrb3GLO95TmelHUpsYS4mfrKwBCgZWTH8gL6/a8eXhPw92HBSQOyau3HCCTw0IzrkE970s3FGONw==
+"@ton/core@^0.53.0":
+  version "0.53.0"
+  resolved "https://registry.yarnpkg.com/@ton/core/-/core-0.53.0.tgz#9a2c101c4d2f48d0c9ec0e889b067da72d914df1"
+  integrity sha512-tB5RxXFS6Z/ivmsqMn/eebEZmkWXIAz+hS1PDZXhbBkcvnBTknZ12g2AFrZtXyuvpm8O6SbL15UI/3NgkyIWzQ==
   dependencies:
     symbol.inspect "1.0.1"
 
@@ -1059,10 +1059,10 @@
     jssha "3.2.0"
     tweetnacl "1.0.3"
 
-"@ton/ton@^13.5.1":
-  version "13.5.1"
-  resolved "https://registry.npmjs.org/@ton/ton/-/ton-13.5.1.tgz"
-  integrity sha512-ffmlDqQG3K31tEIHwhKTdluaGvj1Cmb0QXOVG8AocojPiyJ1WnWh/uG19tk94oDGW8c6XRbkjQYUwhDK8ZlF5w==
+"@ton/ton@^13.9.0":
+  version "13.9.0"
+  resolved "https://registry.yarnpkg.com/@ton/ton/-/ton-13.9.0.tgz#18b0a447d49c84b30997bda385af30278bac8033"
+  integrity sha512-bvDn9vv0rNsN/OH84Q4DKH3N21AD0MvTxXmnS0wPEOoU38F4mltXmA7an2SjaSgd9kAlsOSHa0EirkTie+Zitw==
   dependencies:
     axios "^0.25.0"
     dataloader "^2.0.0"
