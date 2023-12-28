@@ -1080,10 +1080,10 @@
     "@smithy/types" "^2.7.0"
     tslib "^2.5.0"
 
-"@ton-community/gamefi-sdk@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@ton-community/gamefi-sdk/-/gamefi-sdk-0.0.2.tgz#fb13ccc1baa8c4422e3a606e5f7ab5a17e0f613e"
-  integrity sha512-aPwSzWyO+pq+ImGKCOpSse6KFCaoJjelpD6pGk192p2ifbJko0kCM1a2slQ0nT8gSxfpiJ8muLcCqu/g52lffA==
+"@ton-community/gamefi-sdk@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@ton-community/gamefi-sdk/-/gamefi-sdk-0.0.3.tgz#971fc65dbf4be6500f6444d30567f4798d1f6c67"
+  integrity sha512-fnS6z7Y9SV3F9fV+JKUEgE1FZw/kbZnTGpUIL+uCr1wqEqr8wtGNDKDn1iYKuzqDQIiD+YZudjbP4FkW5NV1oA==
   dependencies:
     "@aws-sdk/client-s3" "^3.423.0"
     "@orbs-network/ton-access" "^2.3.3"
@@ -1377,6 +1377,11 @@ diff@^4.0.1:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/diff/-/diff-4.0.2.tgz#60f3aecb89d5fae520c11aa19efc2bb982aade7d"
   integrity sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==
+
+dotenv@^16.3.1:
+  version "16.3.1"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.3.1.tgz#369034de7d7e5b120972693352a3bf112172cc3e"
+  integrity sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==
 
 emoji-regex@^8.0.0:
   version "8.0.0"

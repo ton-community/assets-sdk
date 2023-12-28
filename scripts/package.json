@@ -2,12 +2,13 @@
   "name": "gamefi-sdk-scripts",
   "version": "0.0.1",
   "dependencies": {
-    "@ton-community/gamefi-sdk": "^0.0.2",
+    "@ton-community/gamefi-sdk": "^0.0.3",
     "@ton/core": "^0.53.0",
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.9.0",
     "@types/inquirer": "^8.0.0",
     "@types/node": "^20.10.5",
+    "dotenv": "^16.3.1",
     "inquirer": "^8.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
