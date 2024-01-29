@@ -6,17 +6,21 @@ export interface NftContent {
     uri?: string,
     name?: string,
     description?: string,
+    social_links?: string[], 
     image?: string,
     imageData?: Buffer,
 }
 
 export function nftContentToInternal(content: NftContent) {
+    const social_links = Array.isArray(content.social_links) && content.social_links.every(link => typeof link === 'string') ? JSON.stringify(content.social_links) : undefined
+    
     return {
         uri: content.uri,
         name: content.name,
         description: content.description,
         image: content.image,
         image_data: content.imageData?.toString('base64'),
+        social_links, 
     };
 }
 
