@@ -207,7 +207,7 @@ export class GameFiSDK {
         return this.api.open(NftSale.open(address, this.sender));
     }
 
-    private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {
+    private async internalOffchainContentToCell(internal: Record<string, string | string[] | number | undefined>) {
         const contentUrl = await this.storage.uploadFile(Buffer.from(JSON.stringify(internal), 'utf-8'));
         return beginCell()
             .storeUint(0x01, 8)
@@ -215,7 +215,7 @@ export class GameFiSDK {
             .endCell();
     }
 
-    private async contentToCell(internal: Record<string, string | number | undefined>, onchain: boolean) {
+    private async contentToCell(internal: Record<string, string | string[] | number | undefined>, onchain: boolean) {
         return onchain ? internalOnchainContentToCell(internal) : await this.internalOffchainContentToCell(internal);
     }
 }
