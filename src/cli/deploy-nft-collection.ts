@@ -80,7 +80,7 @@ async function promptForUserInput(params: { defaultRoyaltyRecipient: string }): 
     if (type === 'nft') {
         const {royalty, royaltyRecipient} = await inquirer.prompt([{
             name: 'royalty',
-            message: 'Enter royalty percentage (eg. 10%)',
+            message: 'Enter royalty percentage (eg. 5%)',
             default: '5%',
             type: 'number',
             validate(input: any) {

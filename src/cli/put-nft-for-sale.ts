@@ -30,7 +30,7 @@ async function promptForUserInput(): Promise<UserInput> {
         }
     }, {
         name: 'marketplaceFee',
-        message: 'Enter marketplace fee percentage (eg. 10%)',
+        message: 'Enter marketplace fee percentage (eg. 5%)',
         mask: '\d+\.?\d*',
         default: '5%',
         type: 'number',

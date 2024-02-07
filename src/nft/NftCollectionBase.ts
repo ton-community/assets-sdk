@@ -206,29 +206,19 @@ export function loadNftChangeContentMessage(slice: Slice): NftChangeContentMessa
 export abstract class NftCollectionBase<T> implements Contract {
     static code = Cell.fromBase64(nftCollectionEditableCode.codeBoc);
 
-    public readonly storeNftItemParams: (src: T) => (builder: Builder) => void;
+    public readonly contentResolver?: ContentResolver;
 
-    public readonly loadNftItemParams: (slice: Slice) => T;
+    public readonly storeNftItemParams?: (src: T) => (builder: Builder) => void;
+
+    public readonly loadNftItemParams?: (slice: Slice) => T;
 
     constructor(public readonly address: Address, public sender?: Sender, public readonly init?: {
         code: Cell,
         data: Cell
-    }, public readonly contentResolver?: ContentResolver, storeNftItemParams?: (src: T) => (builder: Builder) => void, loadNftItemParams?: (slice: Slice) => T) {
-        if (storeNftItemParams) {
-            this.storeNftItemParams = storeNftItemParams;
-        } else {
-            this.storeNftItemParams = (src: T) => (builder: Builder) => {
-                throw new Error('storeNftItemParams is not defined');
-            };
-        }
-
-        if (loadNftItemParams) {
-            this.loadNftItemParams = loadNftItemParams;
-        } else {
-            this.loadNftItemParams = (slice: Slice) => {
-                throw new Error('loadNftItemParams is not defined');
-            };
-        }
+    }, contentResolver?: ContentResolver, storeNftItemParams?: (src: T) => (builder: Builder) => void, loadNftItemParams?: (slice: Slice) => T) {
+        this.contentResolver = contentResolver;
+        this.storeNftItemParams = storeNftItemParams;
+        this.loadNftItemParams = loadNftItemParams;
     }
 
     async sendMint(provider: ContractProvider, message: NftMintMessage<T>, args?: {
@@ -238,6 +228,10 @@ export abstract class NftCollectionBase<T> implements Contract {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
+        if (!this.storeNftItemParams) {
+            throw new Error('storeNftItemParams is not defined');
+        }
+
         await provider.internal(this.sender, {
             value: args?.value ?? toNano('0.05'),
             bounce: args?.bounce ?? true,
@@ -249,6 +243,10 @@ export abstract class NftCollectionBase<T> implements Contract {
     async sendBatchMint(provider: ContractProvider, message: NftBatchMintMessage<T>, args?: { value?: bigint, bounce?: boolean }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
+        }
+
+        if (!this.storeNftItemParams) {
+            throw new Error('storeNftItemParams is not defined');
         }
 
         await provider.internal(this.sender, {

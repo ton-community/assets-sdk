@@ -32,6 +32,8 @@ export async function main() {
         totalSupply: jettonData.totalSupply,
         mintable: jettonData.mintable,
         adminAddress: jettonData.adminAddress,
+        symbol: jettonContent.symbol,
+        decimals: jettonContent.decimals,
     };
     printInfo(jettonInfo, network);
 }

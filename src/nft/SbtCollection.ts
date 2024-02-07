@@ -70,7 +70,15 @@ export class SbtCollection<T = string> extends NftCollectionBase<SbtItemParams<T
         return new SbtCollection(contractAddress(0, init), sender, init, contentResolver, storeSbtItemParams, loadSbtItemParams);
     }
 
-    static open(address: Address, sender?: Sender, contentResolver?: ContentResolver) {
-        return new SbtCollection(address, sender, undefined, contentResolver);
+    static open<T>(
+        address: Address,
+        sender?: Sender,
+        contentResolver?: ContentResolver,
+        storeSbtItemParams?: (params: SbtItemParams<T>) => (builder: Builder) => void,
+        loadSbtItemParams?: (slice: Slice) => SbtItemParams<T>,
+    ) {
+        storeSbtItemParams ??= storeSbtItemStringParams as (params: SbtItemParams<T>) => (builder: Builder) => void;
+        loadSbtItemParams ??= loadSbtItemStringParams as (slice: Slice) => SbtItemParams<T>;
+        return new SbtCollection(address, sender, undefined, contentResolver, storeSbtItemParams, loadSbtItemParams);
     }
 }

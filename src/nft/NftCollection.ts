@@ -106,8 +106,8 @@ export class NftCollection<T = string> extends NftCollectionBase<NftItemParams<T
             },
         })).endCell();
         const init = { data, code: NftCollection.code };
-        const storeNftItemParams = params.storeNftItemParams ?? storeNftItemStringParams as (params: NftItemParams<T>) => (builder: Builder) => void;
-        const loadNftItemParams = params.loadNftItemParams ?? loadNftItemStringParams as (slice: Slice) => NftItemParams<T>;
+        const storeNftItemParams = params.storeNftItemParams || storeNftItemStringParams as (params: NftItemParams<T>) => (builder: Builder) => void;
+        const loadNftItemParams = params.loadNftItemParams || loadNftItemStringParams as (slice: Slice) => NftItemParams<T>;
         return new NftCollection<T>(contractAddress(0, init), sender, init, contentResolver, storeNftItemParams, loadNftItemParams);
     }
 
@@ -118,6 +118,8 @@ export class NftCollection<T = string> extends NftCollectionBase<NftItemParams<T
         storeNftItemParams?: (params: NftItemParams<T>) => (builder: Builder) => void,
         loadNftItemParams?: (slice: Slice) => NftItemParams<T>,
     ) {
+        storeNftItemParams ||= storeNftItemStringParams as (params: NftItemParams<T>) => (builder: Builder) => void;
+        loadNftItemParams ||= loadNftItemStringParams as (slice: Slice) => NftItemParams<T>;
         return new NftCollection<T>(address, sender, undefined, contentResolver, storeNftItemParams, loadNftItemParams);
     }
 

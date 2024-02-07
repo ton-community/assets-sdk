@@ -14,6 +14,7 @@ import {main as getNftItem} from './get-nft-item';
 import {main as getNftSale} from './get-nft-sale';
 import {main as mintJetton} from './mint-jetton';
 import {main as mintNft} from './mint-nft';
+import {main as mintSbt} from './mint-sbt';
 import {main as putNftForSale} from './put-nft-for-sale';
 import {main as setupEnv} from './setup-env';
 import {main as transferJetton} from './transfer-jetton';
@@ -76,6 +77,10 @@ const commands = {
     'mint-nft': {
         main: mintNft,
         description: 'Mints a new NFT item and sends it to the wallet',
+    },
+    'mint-sbt': {
+        main: mintSbt,
+        description: 'Mints a new SBT item and sends it to the wallet',
     },
     'transfer-jetton': {
         main: transferJetton,
