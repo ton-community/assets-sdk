@@ -1,8 +1,8 @@
 import { toNano } from "@ton/core";
-import { GameFiSDK, createWalletV4 } from "../src/index";
+import { AssetsSDK, createWalletV4 } from "../src/index";
 
 async function main() {
-    const sdk = await GameFiSDK.create({
+    const sdk = await AssetsSDK.create({
         storage: {
             pinataApiKey: process.env.PINATA_API!,
             pinataSecretKey: process.env.PINATA_SECRET!,
@@ -13,7 +13,7 @@ async function main() {
 
     console.log('Using wallet', sdk.sender?.address);
 
-    const jetton = await sdk.createJetton({
+    const jetton = await sdk.deployJetton({
         name: 'Test jetton 4',
         decimals: 9,
         description: 'Test jetton',

@@ -16,7 +16,7 @@ export class PinataStorage implements Storage {
     async uploadFile(contents: Buffer): Promise<string> {
         return 'ipfs://' + (await this.client.pinFileToIPFS(Readable.from(contents), {
             pinataMetadata: {
-                name: 'GameFi SDK Jetton',
+                name: 'Assets SDK Jetton',
             }
         })).IpfsHash;
     }

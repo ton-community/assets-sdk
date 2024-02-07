@@ -1,11 +1,14 @@
-import { Address } from "@ton/core";
-import { createEnv } from "./common";
+import {Address} from "@ton/core";
+import {createEnv, printInfo} from "./common";
 import inquirer from 'inquirer';
 
-export async function main() {
-    const { sdk } = await createEnv();
+type UserInput = {
+    nftAddress: Address;
+    recipient: Address;
+};
 
-    const q = await inquirer.prompt([{
+async function promptForUserInput(): Promise<UserInput> {
+    const {item, recipient} = await inquirer.prompt([{
         name: 'item',
         message: 'Enter item address',
     }, {
@@ -13,11 +16,23 @@ export async function main() {
         message: 'Enter recipient address',
     }]);
 
-    const item = sdk.openNftItem(Address.parse(q.item));
+    return {
+        nftAddress: Address.parse(item),
+        recipient: Address.parse(recipient),
+    };
+}
 
-    await item.sendTransfer({
-        to: Address.parse(q.recipient),
-    });
+export async function main() {
+    const {sdk, network} = await createEnv();
+    const {nftAddress, recipient} = await promptForUserInput();
 
-    console.log('Your item has been transferred!');
+    const item = sdk.openNftItem(nftAddress);
+    await item.sendTransfer({to: recipient});
+
+    const nftTransferInfo = {
+        name: 'Transfer NFT',
+        item: item.address,
+        recipient: recipient,
+    };
+    printInfo(nftTransferInfo, network);
 }

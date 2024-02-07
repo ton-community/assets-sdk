@@ -1,14 +1,16 @@
 {
-  "name": "@ton-community/gamefi-sdk",
+  "name": "@ton-community/assets-sdk",
   "version": "0.0.3",
   "main": "dist/index.js",
   "types": "./dist",
-  "license": "MIT",
   "bin": {
-    "gamefi-sdk": "./dist/cli/index.js"
+    "assets-cli": "./dist/cli/cli.js"
   },
+  "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run compile && tsc",
+    "compile": "ts-node ./src/jetton/contracts/compile.ts && ts-node ./src/nft/contracts/compile.ts",
+    "postinstall": "npm run compile",
     "dev": "tsc -w"
   },
   "files": [
@@ -31,9 +33,12 @@
   "devDependencies": {
     "@ton/core": "^0.53.0",
     "@ton/crypto": "^3.2.0",
+    "@ton-community/func-js": "0.6.3",
     "@ton/ton": "^13.9.0",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.3.2",
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
     "ton-crypto": "^3.2.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6"

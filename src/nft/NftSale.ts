@@ -128,7 +128,7 @@ export class NftSale implements Contract {
             fullPrice: stack.readBigNumber(),
             marketplaceFeeTo: stack.readAddress(),
             marketplaceFee: stack.readBigNumber(),
-            royaltyTo: stack.readAddress(),
+            royaltyTo: stack.readAddressOpt(),
             royalty: stack.readBigNumber(),
         };
     }

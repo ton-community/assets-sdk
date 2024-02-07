@@ -1,22 +1,22 @@
-# gamefi-sdk
+# assets-sdk
 
-GameFi SDK provides developer friendly APIs to help interact game developers with different GameFi assets on TON, such as NFTs/SBTs and jettons (fungible tokens). An example game using it can be found [here](https://github.com/ton-community/flappy-bird-phaser).
+Assets SDK provides developer friendly APIs to help interact game developers with different Assets assets on TON, such as NFTs/SBTs and jettons (fungible tokens). An example game using it can be found [here](https://github.com/ton-community/flappy-bird-phaser).
 
 ## Installation
 
 ```
-npm i @ton-community/gamefi-sdk
+npm i @ton-community/assets-sdk
 ```
 or
 ```
-yarn add @ton-community/gamefi-sdk
+yarn add @ton-community/assets-sdk
 ```
 
 ## Usage
 
-In order to start using this SDK, you need to acquire an instance of `GameFiSDK` in your code. That will require specifying a storage (we currently support Pinata and S3 out of the box, but you can implement your own using our interface), an API (mainnet or testnet), and a wallet (V4 is supported out of the box). For example:
+In order to start using this SDK, you need to acquire an instance of `AssetsSDK` in your code. That will require specifying a storage (we currently support Pinata and S3 out of the box, but you can implement your own using our interface), an API (mainnet or testnet), and a wallet (V4 is supported out of the box). For example:
 ```typescript
-const sdk = await GameFiSDK.create({
+const sdk = await AssetsSDK.create({
     storage: {
         pinataApiKey: process.env.PINATA_API!,
         pinataSecretKey: process.env.PINATA_SECRET!,
@@ -139,27 +139,38 @@ You can also use the `NftItem` class to do the following:
 It's also an option to use the SDK as a CLI tool. To do that, pick one of the following options:
 ```bash
 # global installation
-npm i -g @ton-community/gamefi-sdk
-gamefi-sdk COMMAND
+npm i -g @ton-community/assets-sdk
+assets-cli COMMAND
 
 # local installation
-npm install --save-dev @ton-community/gamefi-sdk
-npx gamefi-sdk COMMAND
+npm install --save-dev @ton-community/assets-sdk
+npx assets-cli COMMAND
 ```
 
 ### Commands
 
-> Before running other commands, please run `gamefi-sdk setup-env` first.
+> Before running other commands, please run `assets-cli setup-env` first.
 
-| Command | Description |
-| --- | --- |
-| `setup-env` | Setup the environment for your project. It setups network type, wallet and storage - Pinata or S3 |
-| `deploy-jetton` | Create and deploy own token to implement game currency. | Deploy the NFT collection contract. |
-| `get-wallet-state` | Print your wallet type and balance. |
-| `mint-jetton` | Mint jetton to the wallet. |
-| `mint-nft` | Mint NFT to the wallet. |
-| `transfer-jetton` | Transfer previously minted jetton to another wallet. |
-| `transfer-nft` | Transfer previously minted NFT to another wallet. |
+| Command                               | Description |
+|---------------------------------------| --- |
+| `assets-cli setup-env`                | Setup the environment for your project. It setups network type, wallet and storage - Pinata or S3 |
+| `assets-cli cancel-nft-sale`          | Cancel an existing NFT sale. |
+| `assets-cli deploy-jetton`            | Create and deploy own token to implement game currency. |
+| `assets-cli deploy-nft-collection`    | Create and deploy own NFT collection. |
+| `assets-cli get-wallet-state`         | Print your wallet type and balance. |
+| `assets-cli get-jetton`               | Retrieves details of an existing jetton. |
+| `assets-cli get-jetton-balance`       | Retrieves balance of a specific jetton wallet. |
+| `assets-cli get-nft-collection`       | Retrieves details of an existing NFT collection. |
+| `assets-cli get-nft-collection-item`  | Retrieves an item from the NFT collection. |
+| `assets-cli get-nft-collection-items` | Retrieves all items from the NFT collection. |
+| `assets-cli get-nft-item`             | Retrieves an NFT item. |
+| `assets-cli get-nft-sale`             | Retrieves details of an existing NFT sale. |
+| `assets-cli mint-jetton`              | Mint jetton to the wallet. |
+| `assets-cli mint-nft`                 | Mint NFT to the wallet. |
+| `assets-cli transfer-jetton`          | Transfer previously minted jetton to another wallet. |
+| `assets-cli transfer-nft`             | Transfer previously minted NFT to another wallet. |
+| `assets-cli transfer-ton`             | Transfers TONs from one account to another. |
+| `assets-cli put-nft-for-sale`         | Puts an NFT item for sale. |
 
 ## License
 

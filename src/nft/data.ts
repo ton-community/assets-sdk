@@ -1,4 +1,4 @@
-import { Address, Cell } from "@ton/core";
+import {Address, Cell} from "@ton/core";
 
 export type NftItemParams = {
     owner: Address,
@@ -15,28 +15,14 @@ export type SingleMintRequest<T> = {
     itemParams: Cell | T,
 };
 
-export type SingleNftMintRequest = SingleMintRequest<NftItemParams>;
+// export type MintRequest<T> = {
+//     queryId?: bigint,
+//     requestValue?: bigint,
+// } & SingleMintRequest<T>;
 
-export type SingleSbtMintRequest = SingleMintRequest<SbtItemParams>;
-
-export type MintRequest<T> = {
-    queryId?: bigint,
-    requestValue?: bigint,
-} & SingleMintRequest<T>;
-
-export type NftMintRequest = MintRequest<NftItemParams>;
-
-export type SbtMintRequest = MintRequest<SbtItemParams>;
-
-export type BatchMintRequest<T> = {
-    queryId?: bigint,
-    requestValue?: bigint,
-    requests: SingleMintRequest<T>[],
-};
-
-export type NftBatchMintRequest = BatchMintRequest<NftItemParams>;
-
-export type SbtBatchMintRequest = BatchMintRequest<SbtItemParams>;
+// export type NftMintRequest = MintRequest<NftItemParams>;
+//
+// export type SbtMintRequest = MintRequest<SbtItemParams>;
 
 export type NftTransferRequest = {
     queryId?: bigint,
@@ -86,6 +72,20 @@ export interface NftSaleData {
     fullPrice: bigint,
     marketplaceFeeTo: Address,
     marketplaceFee: bigint,
-    royaltyTo: Address,
+    royaltyTo: Address | null,
     royalty: bigint,
+}
+
+export interface NftSaleParams {
+    createdAt?: number;
+    marketplace: Address;
+    nft: Address;
+    fullPrice: bigint;
+    marketplaceFeeTo: Address;
+    marketplaceFee: bigint;
+    royaltyTo?: Address | null;
+    royalty?: bigint;
+    canDeployByExternal?: boolean;
+    value?: bigint;
+    queryId?: bigint;
 }

@@ -1,21 +1,22 @@
-import { Address, Sender, toNano, beginCell, Contract } from "@ton/core";
-import { PinataStorage, S3Storage, Storage } from "./storage";
-import { API } from "./api";
-import { ExtendedTonClient4 } from "./ExtendedTonClient4";
-import { getHttpV4Endpoint } from "@orbs-network/ton-access";
-import { JettonContent, jettonContentToInternal } from "./jetton/content";
-import { JettonMintRequest } from "./jetton/data";
-import { NftContent, nftContentToInternal } from "./nft/content";
-import { ExtendedContractProvider } from "./ExtendedContractProvider";
-import { internalOnchainContentToCell } from "./utils";
-import { JettonWallet } from "./jetton/JettonWallet";
-import { Jetton } from "./jetton/Jetton";
-import { NftCollection } from "./nft/NftCollection";
-import { NftItem } from "./nft/NftItem";
-import { SbtCollection } from "./nft/SbtCollection";
-import { NftMintRequest, SbtMintRequest } from "./nft/data";
-import { ContentResolver, DefaultContentResolver } from "./content";
-import { NftSale } from "./nft/NftSale";
+import {Address, beginCell, Contract, Sender, toNano} from "@ton/core";
+import {PinataStorage, S3Storage, Storage} from "./storage";
+import {API} from "./api";
+import {ExtendedTonClient4} from "./ExtendedTonClient4";
+import {getHttpV4Endpoint} from "@orbs-network/ton-access";
+import {JettonContent, jettonContentToInternal} from "./jetton/content";
+import {JettonParams} from "./jetton/data";
+import {NftContent, nftContentToInternal} from "./nft/content";
+import {ExtendedContractProvider} from "./ExtendedContractProvider";
+import {internalOnchainContentToCell} from "./utils";
+import {JettonWallet} from "./jetton/JettonWallet";
+import {JettonMinter} from "./jetton/JettonMinter";
+import {NftCollection, NftItemParams, NftRoyaltyParams} from "./nft/NftCollection";
+import {NftItem} from "./nft/NftItem";
+import {SbtCollection} from "./nft/SbtCollection";
+import {NftSaleParams} from "./nft/data";
+import {ContentResolver, DefaultContentResolver} from "./content";
+import {NftSale} from "./nft/NftSale";
+import {NftMintMessage} from "./nft/NftCollectionBase";
 
 export interface PinataStorageParams {
     pinataApiKey: string
@@ -28,8 +29,9 @@ export interface S3StorageParams {
     s3Bucket: string
 }
 
-export class GameFiSDK {
-    constructor(public readonly storage: Storage, public readonly api: API, public readonly sender?: Sender, public readonly contentResolver?: ContentResolver) {}
+export class AssetsSDK {
+    constructor(public readonly storage: Storage, public readonly api: API, public readonly sender?: Sender, public readonly contentResolver?: ContentResolver) {
+    }
 
     static async create(params: {
         storage: PinataStorageParams | S3StorageParams | Storage,
@@ -48,8 +50,11 @@ export class GameFiSDK {
 
         let api: API;
         if (params.api === 'mainnet' || params.api === 'testnet') {
-            const tc4 = new ExtendedTonClient4({ endpoint: await getHttpV4Endpoint({ network: params.api }), timeout: 15000 });
-            api = { open: (contract) => tc4.openExtended(contract), provider: (addr, init) => tc4.provider(addr, init) };
+            const tc4 = new ExtendedTonClient4({
+                endpoint: await getHttpV4Endpoint({network: params.api}),
+                timeout: 15000
+            });
+            api = {open: (contract) => tc4.openExtended(contract), provider: (addr, init) => tc4.provider(addr, init)};
         } else {
             api = params.api;
         }
@@ -63,43 +68,41 @@ export class GameFiSDK {
             }
         }
 
-        return new GameFiSDK(storage, api, sender, params.contentResolver ?? new DefaultContentResolver());
+        let contentResolver: ContentResolver | undefined = params.contentResolver;
+        if (contentResolver === undefined) {
+            contentResolver = new DefaultContentResolver();
+        }
+
+        return new AssetsSDK(storage, api, sender, contentResolver);
     }
 
-    async createJetton(content: JettonContent, options?: {
-        onchainContent?: boolean,
-        adminAddress?: Address,
-        premint?: Exclude<JettonMintRequest, 'requestValue'>,
-        value?: bigint,
-    }) {
+    async deployJetton(content: JettonContent, options?: JettonParams) {
         const adminAddress = options?.adminAddress ?? this.sender?.address;
         if (adminAddress === undefined) {
             throw new Error('Admin address must be defined in options or be available in Sender');
         }
-        const jetton = this.api.open(Jetton.create({
+        const jetton = this.api.open(JettonMinter.create({
             admin: adminAddress,
             content: await this.contentToCell(jettonContentToInternal(content), options?.onchainContent ?? false),
         }, this.sender, this.contentResolver));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
-            await jetton.sendDeploy(value);
+            await jetton.sendDeploy({value});
         } else {
-            await jetton.sendMint({
-                ...options.premint,
-                requestValue: value,
-            });
+            await jetton.sendMint(options.premint, {value: value});
         }
         return jetton;
     }
 
     openJetton(address: Address) {
-        return this.api.open(Jetton.open(address, this.sender, this.contentResolver));
+        return this.api.open(JettonMinter.open(address, this.sender, this.contentResolver));
     }
 
-    async createNftCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
+    async deployNftCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
+        royaltyParams?: NftRoyaltyParams,
         onchainContent?: boolean,
         adminAddress?: Address,
-        premint?: Exclude<NftMintRequest, 'requestValue'>,
+        premint?: NftMintMessage<NftItemParams<string>>,
         value?: bigint,
     }) {
         const adminAddress = options?.adminAddress ?? this.sender?.address;
@@ -109,18 +112,16 @@ export class GameFiSDK {
         const collection = this.api.open(NftCollection.create({
             admin: adminAddress,
             content: beginCell()
-            .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
-            .storeRef(beginCell().storeStringTail(content.commonContent))
-            .endCell(),
+                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
+                .storeRef(beginCell().storeStringTail(content.commonContent))
+                .endCell(),
+            royalty: options?.royaltyParams,
         }, this.sender, this.contentResolver));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
-            await collection.sendDeploy(value);
+            await collection.sendDeploy({value: value});
         } else {
-            await collection.sendMint({
-                ...options.premint,
-                requestValue: value,
-            });
+            await collection.sendMint(options.premint, {value: value});
         }
         return collection;
     }
@@ -129,10 +130,10 @@ export class GameFiSDK {
         return this.api.open(NftCollection.open(address, this.sender, this.contentResolver));
     }
 
-    async createSbtCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
+    async deploySbtCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
         onchainContent?: boolean,
         adminAddress?: Address,
-        premint?: Exclude<SbtMintRequest, 'requestValue'>,
+        premint?: NftMintMessage<NftItemParams<string>>,
         value?: bigint,
     }) {
         const adminAddress = options?.adminAddress ?? this.sender?.address;
@@ -148,12 +149,9 @@ export class GameFiSDK {
         }, this.sender, this.contentResolver));
         const value = options?.value ?? toNano('0.05');
         if (options?.premint === undefined) {
-            await collection.sendDeploy(value);
+            await collection.sendDeploy({ value: value });
         } else {
-            await collection.sendMint({
-                ...options.premint,
-                requestValue: value,
-            });
+            await collection.sendMint(options.premint, {value: value});
         }
         return collection;
     }
@@ -170,19 +168,7 @@ export class GameFiSDK {
         return this.api.open(new NftItem(address, this.sender, this.contentResolver));
     }
 
-    async createNftSale(params: {
-        createdAt?: number,
-        marketplace?: Address | null,
-        nft: Address,
-        fullPrice: bigint,
-        marketplaceFeeTo?: Address | null,
-        marketplaceFee?: bigint,
-        royaltyTo?: Address | null,
-        royalty?: bigint,
-        canDeployByExternal?: boolean,
-        value?: bigint,
-        queryId?: bigint,
-    }) {
+    async deployNftSale(params: NftSaleParams) {
         const marketplaceAddress = params.marketplace ?? this.sender?.address
         if (marketplaceAddress === undefined) {
             throw new Error('Marketplace address must be defined in options or be available in Sender');

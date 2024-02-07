@@ -1,10 +1,33 @@
 import inquirer from 'inquirer';
 import { mnemonicNew } from '@ton/crypto';
 import { writeFile } from 'fs/promises';
-import { createWallet, printAddress } from './common';
+import {createWallet, printAddress, WalletType} from './common';
+
+type S3Storage = {
+    kind: 's3';
+    accessKeyId: string;
+    secretAccessKey: string;
+    bucket: string;
+}
+
+type PinataStorage = {
+    kind: 'pinata';
+    apiKey: string;
+    secretKey: string;
+}
+
+type Storage = S3Storage | PinataStorage;
+
+type Network = 'mainnet' | 'testnet';
+
+type Env = {
+    network: Network;
+    wallet: WalletType;
+    storage: Storage;
+}
 
 export async function main() {
-    const q = await inquirer.prompt([{
+    const { network, wallet } = await inquirer.prompt([{
         name: 'network',
         message: 'Which network to use?',
         choices: ['mainnet', 'testnet'],
@@ -12,27 +35,30 @@ export async function main() {
     }, {
         name: 'wallet',
         message: 'Which wallet type to use?',
-        choices: ['v4', 'highload-v2'],
-        type: 'list',
-    }, {
-        name: 'storage',
-        message: 'Which storage to use?',
-        choices: ['pinata', 's3'],
+        choices: ['highload-v2'],
         type: 'list',
     }]);
 
     const mnemonic = await mnemonicNew();
 
     const pairs: [string, string][] = [
-        ['NETWORK', q.network],
+        ['NETWORK', network],
         ['MNEMONIC', mnemonic.join(' ')],
-        ['WALLET_TYPE', q.wallet],
-        ['STORAGE_TYPE', q.storage],
+        ['WALLET_TYPE', wallet],
     ];
 
-    const address = (await createWallet(q.wallet, mnemonic)).wallet.address;
+    const address = (await createWallet(wallet, mnemonic)).wallet.address;
 
-    if (q.storage === 'pinata') {
+    const { storage }  = await inquirer.prompt([{
+        name: 'storage',
+        message: 'Which storage to use?',
+        choices: ['pinata', 's3'],
+        type: 'list',
+    }]);
+
+    pairs.push(['STORAGE_TYPE', storage]);
+
+    if (storage === 'pinata') {
         const q = await inquirer.prompt([{
             name: 'apikey',
             message: 'Please enter your Pinata API key',
@@ -41,7 +67,7 @@ export async function main() {
             message: 'Please enter your Pinata secret key',
         }]);
         pairs.push(['PINATA_API_KEY', q.apikey], ['PINATA_SECRET_KEY', q.secretkey]);
-    } else if (q.storage === 's3') {
+    } else if (storage === 's3') {
         const q = await inquirer.prompt([{
             name: 'accesskeyid',
             message: 'Please enter your S3 access key ID',
@@ -54,7 +80,37 @@ export async function main() {
         }]);
         pairs.push(['S3_ACCESS_KEY_ID', q.accesskeyid], ['S3_SECRET_ACCESS_KEY', q.secretaccesskey], ['S3_BUCKET', q.bucket]);
     } else {
-        throw new Error(`Unknown storage type: ${q.storage}`);
+        throw new Error(`Unknown storage type: ${storage}`);
+    }
+
+    const {ipfsGateway} = await inquirer.prompt([{
+        name: 'ipfsGateway',
+        message: 'Which IPFS gateway to use?',
+        choices: ['pinata', 'ipfs.io', 'https'],
+        type: 'list',
+    }]);
+
+    pairs.push(['IPFS_GATEWAY_TYPE', ipfsGateway]);
+
+    if (ipfsGateway === 'ipfs.io') {
+        pairs.push(['IPFS_GATEWAY', 'https://ipfs.io/']);
+    } else if (ipfsGateway === 'https') {
+        const { gateway } = await inquirer.prompt([{
+            name: 'gateway',
+            message: 'Please enter the IPFS gateway to use (e.g. https://ipfs.io/)',
+        }]);
+        pairs.push(['IPFS_GATEWAY', gateway]);
+    } else if (ipfsGateway === 'pinata') {
+        const { gateway, apikey } = await inquirer.prompt([{
+            name: 'gateway',
+            message: 'Please enter the IPFS gateway to use (e.g. https://gateway.pinata.cloud/)',
+        }, {
+            name: 'apikey',
+            message: 'Please enter your Pinata Gateway API key',
+        }]);
+        pairs.push(['IPFS_GATEWAY', gateway], ['IPFS_GATEWAY_API_KEY', apikey]);
+    } else {
+        throw new Error(`Unknown IPFS gateway type: ${ipfsGateway}`);
     }
 
     try {
@@ -67,5 +123,10 @@ export async function main() {
         return;
     }
 
-    printAddress(address, q.network);
+    printAddress(address, network);
+    if (network === 'testnet') {
+        console.log('Please use https://t.me/testgiver_ton_bot to get some test TON');
+    } else {
+        console.log('Please use top up your wallet with some TON');
+    }
 }

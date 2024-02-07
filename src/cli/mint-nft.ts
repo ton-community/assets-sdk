@@ -1,17 +1,40 @@
-import { createEnv, printAddress } from "./common";
+import {createEnv, formatAddress, printAddress, printInfo} from "./common";
 import inquirer from 'inquirer';
 import { readFile } from 'fs/promises';
-import { Address } from '@ton/core';
+import {Address, Contract} from '@ton/core';
 
-export async function main() {
-    const { sdk, network } = await createEnv();
+type ImageUrl = {
+    kind: 'url',
+    url: string,
+};
 
-    const q = await inquirer.prompt([{
+type ImageFile = {
+    kind: 'file',
+    file: Buffer,
+};
+
+type NoImage = {
+    kind: 'none',
+};
+
+type Image = ImageUrl | ImageFile | NoImage;
+
+type UserInput = {
+    address: Address;
+    owner: Address;
+    name: string;
+    description: string | undefined;
+    image: Image;
+};
+
+async function promptForUserInput(params: { defaultOwner: string }): Promise<UserInput> {
+    const { address, owner, name, description, image } = await inquirer.prompt([{
         name: 'address',
         message: 'Enter collection address'
     }, {
         name: 'owner',
-        message: 'Enter item owner',
+        message: 'Enter item owner (default: your wallet address)',
+        default: params.defaultOwner,
     }, {
         name: 'name',
         message: 'Enter item name',
@@ -21,38 +44,88 @@ export async function main() {
     }, {
         name: 'image',
         message: 'Enter image path or link',
+        async validate(input: string) {
+            if (input.startsWith('http://') || input.startsWith('https://')) {
+                const response = await fetch(input);
+                if (!response.ok) {
+                    return 'Image file not found';
+                }
+                return true;
+            }
+
+            try {
+                await readFile(input);
+                return true;
+            } catch (e) {
+                return 'Image file not found';
+            }
+        }
     }]);
 
-    const collection = sdk.openNftCollection(Address.parse(q.address));
-
-    let image: string | undefined;
-    if (q.image === '') {
-        image = undefined;
-    } else if (q.image.startsWith('http://') || q.image.startsWith('https://')) {
-        image = q.image;
+    let formattedImage: Image;
+    if (image === '') {
+        formattedImage = { kind: 'none' };
+    } else if (image.startsWith('http://') || image.startsWith('https://')) {
+        formattedImage = { kind: 'url', url: image };
     } else {
-        image = await sdk.storage.uploadFile(await readFile(q.image));
+        formattedImage = { kind: 'file', file: await readFile(image) };
     }
 
-    const content = {
-        name: q.name,
-        description: q.description === '' ? undefined : q.description,
-        image,
+    let formattedDescription: string | undefined;
+    if (typeof description === 'string' && description !== '') {
+        formattedDescription = description;
+    }
+
+    return {
+        address: Address.parse(address),
+        owner: Address.parse(owner),
+        name: name,
+        description: formattedDescription,
+        image: formattedImage,
     };
+}
 
-    const contentUrl = await sdk.storage.uploadFile(Buffer.from(JSON.stringify(content)));
+export async function main() {
+    const { sdk, network, wallet } = await createEnv();
+    const { address, owner, name, description, image } = await promptForUserInput({
+        defaultOwner: formatAddress(wallet.wallet.address, network)
+    });
 
-    const index = (await collection.getData()).nextItemIndex;
+    const collection = sdk.openNftCollection(address);
 
+    let uploadedImage: string | undefined;
+    if (image.kind === 'url') {
+        uploadedImage = image.url;
+    } else if (image.kind === 'file') {
+        uploadedImage = await sdk.storage.uploadFile(image.file);
+    } else {
+        uploadedImage = undefined;
+    }
+
+    const content = Buffer.from(JSON.stringify({
+        name: name,
+        description: description,
+        image: uploadedImage,
+    }));
+    const contentUrl = await sdk.storage.uploadFile(content);
+    const { nextItemIndex: index } = await collection.getData();
     await collection.sendMint({
         itemIndex: index,
         itemParams: {
-            owner: Address.parse(q.owner),
+            owner: owner,
             individualContent: contentUrl,
         }
     });
 
-    const address = await collection.getItemAddress(index);
-
-    printAddress(address, network, 'item');
+    const nftItem = await collection.getItem(index);
+    const nftItemInfo = {
+        name: name,
+        description: description,
+        image: uploadedImage,
+        owner: owner,
+        collection: address,
+        index: index,
+        'nft address': nftItem.address,
+    };
+    printInfo(nftItemInfo, network)
 }
