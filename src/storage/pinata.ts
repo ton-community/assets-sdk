@@ -19,8 +19,8 @@ export class PinataStorage implements Storage {
     });
 
     private readonly stream: Deferred<Readable, [Buffer]> = defer(async (contents: Buffer) => {
-        const ctor = await import('stream').then((m) => m.Readable);
-        return ctor.from(contents);
+        const stream = await import('stream').then((m) => m.Readable);
+        return stream.from(contents);
     });
 
     public static create(params: PinataStorageParams) {
