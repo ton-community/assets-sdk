@@ -18,7 +18,7 @@ npx assets-cli setup-env
 
 In order to start using this SDK, you need to acquire an instance of `AssetsSDK` in your code. That will require specifying a storage (we currently support Pinata and S3 out of the box, but you can implement your own using our interface), an API (mainnet or testnet), and a wallet (V4 is supported out of the box). For example:
 ```typescript
-import {AssetsSDK, PinataStorageParams, createApi, createSender, createWalletV4, importKey} from "@ton/assets-sdk";
+import {AssetsSDK, PinataStorageParams, createApi, createSender, createWalletV4, importKey} from "@ton-community/assets-sdk";
 
 // create an instance of the TonClient4
 const NETWORK = 'testnet';
@@ -77,7 +77,7 @@ The SDK also provides a way to store messages in cells and load them from cells.
 
 ```typescript
 import {beginCell} from "@ton/core";
-import {storeJettonMintMessage, loadJettonMintMessage} from "@ton/assets-sdk";
+import {storeJettonMintMessage, loadJettonMintMessage} from "@ton-community/assets-sdk";
 
 // storing a jetton mint message in a cell
 const mintMessage: Cell = beginCell()
@@ -93,7 +93,7 @@ mintMessage.toBoc().toString('base64')
 
 ```typescript
 import {Cell} from "@ton/core";
-import {loadJettonMintMessage} from "@ton/assets-sdk";
+import {loadJettonMintMessage} from "@ton-community/assets-sdk";
 
 // parsing a jetton mint message in a boc base64 to a cell
 const mintMessageCell: Cell = Cell.fromBase64('BASE64_BOC');
