@@ -1,6 +1,6 @@
 {
     "name": "@ton-community/assets-sdk",
-    "version": "0.0.3",
+    "version": "0.0.4-beta.0",
     "main": "dist/index.js",
     "types": "./dist/index.d.ts",
     "bin": {
@@ -11,7 +11,6 @@
         "@pinata/sdk": false,
         "stream": false
     },
-    "license": "MIT",
     "scripts": {
         "build": "npm run compile && tsc",
         "compile": "ts-node ./src/jetton/contracts/compile.ts && ts-node ./src/nft/contracts/compile.ts",
@@ -47,5 +46,14 @@
         "ton-crypto": "^3.2.0",
         "ts-node": "^10.9.1",
         "typescript": "^5.1.6"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ton-community/assets-sdk.git"
+    },
+    "homepage": "https://github.com/ton-community/assets-sdk",
+    "bugs": {
+        "url": "https://github.com/ton-community/assets-sdk/issues"
     }
 }
