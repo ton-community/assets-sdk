@@ -1,5 +1,5 @@
-import { Cell, Dictionary, beginCell } from "@ton/core";
-import { sha256_sync } from "@ton/crypto";
+import {beginCell, Cell, Dictionary} from "@ton/core";
+import {sha256_sync} from "@ton/crypto";
 
 export function sleep(timeout: number): Promise<void> {
     return new Promise((res) => {
@@ -27,4 +27,18 @@ export function internalOnchainContentToCell(internal: Record<string, string | n
         dict.set(sha256_sync(k), b.endCell());
     }
     return beginCell().storeUint(0, 8).storeDict(dict).endCell();
+}
+
+export type Deferred<T, P extends unknown[] = []> = (...args: P) => Promise<T>;
+
+export type DeferredFactory<T, P extends unknown[] = []> = (...args: P) => Promise<T>;
+
+export function defer<T, P extends unknown[] = []>(factory: DeferredFactory<T, P>): Deferred<T, P> {
+  let promise: Promise<T> | null = null;
+  return (...args: P) => {
+      if (!promise) {
+          promise = Promise.resolve(factory(...args));
+      }
+      return promise;
+  };
 }

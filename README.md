@@ -1,37 +1,105 @@
-# gamefi-sdk
+# assets-sdk
 
-GameFi SDK provides developer friendly APIs to help interact game developers with different GameFi assets on TON, such as NFTs/SBTs and jettons (fungible tokens). An example game using it can be found [here](https://github.com/ton-community/flappy-bird-phaser).
+Assets SDK provides developer friendly APIs to help interact game developers with different assets on TON, such as NFTs/SBTs and jettons. An example game using it can be found [here](https://github.com/ton-community/flappy-bird-phaser).
 
 ## Installation
 
+Install the package using npm:
 ```
-npm i @ton-community/gamefi-sdk
+npm i @ton-community/assets-sdk
 ```
-or
-```
-yarn add @ton-community/gamefi-sdk
+
+If you are using the SDK as a CLI tool, you need to set up the environment first. You can do that by running the following command:)
+```bash
+npx assets-cli setup-env
 ```
 
 ## Usage
 
-In order to start using this SDK, you need to acquire an instance of `GameFiSDK` in your code. That will require specifying a storage (we currently support Pinata and S3 out of the box, but you can implement your own using our interface), an API (mainnet or testnet), and a wallet (V4 is supported out of the box). For example:
+In order to start using this SDK, you need to acquire an instance of `AssetsSDK` in your code. That will require specifying a storage (we currently support Pinata and S3 out of the box, but you can implement your own using our interface), an API (mainnet or testnet), and a wallet (V4 is supported out of the box). For example:
 ```typescript
-const sdk = await GameFiSDK.create({
-    storage: {
-        pinataApiKey: process.env.PINATA_API!,
-        pinataSecretKey: process.env.PINATA_SECRET!,
-    },
-    api: 'testnet',
-    wallet: await createWalletV4(process.env.MNEMONIC!),
+import {AssetsSDK, PinataStorageParams, createApi, createSender, createWalletV4, importKey} from "@ton/assets-sdk";
+
+// create an instance of the TonClient4
+const NETWORK = 'testnet';
+const api = await createApi(NETWORK);
+
+// create a sender from the wallet (in this case, Highload Wallet V2)
+const keyPair = await importKey(process.env.MNEMONIC);
+const sender = await createSender('highload-v2', keyPair, api);
+
+// define the storage parameters (in this case, Pinata)
+const storage: PinataStorageParams = {
+    pinataApiKey: process.env.PINATA_API!,
+    pinataSecretKey: process.env.PINATA_SECRET!,
+}
+
+// create the SDK instance
+const sdk = AssetsSDK.create({
+    api: api,          // required, the TonClient4 instance
+    storage: storage,  // optional, the storage instance (Pinata, S3 or your own)
+    sender: sender,    // optional, the sender instance (WalletV4, TonConnect or your own)
 });
 ```
-(This is taken directly out of our [example](./examples/mint.ts), and you can find more in that directory)
+
+(This is taken directly out of our [example](./examples/mint-jetton.ts), and you can find more in that directory)
 
 Here, you would pass your Pinata keys and the wallet mnemonic (space separated) as env variables.
+
+> Don't use the mnemonic in browser environment, use [TonConnect](https://github.com/ton-connect/sdk) instead.
 
 After you do that, you can:
 - create a jetton minter or an NFT/SBT collection (as in the example mentioned above) using the methods `createJetton` or `createNftCollection`/`createSbtCollection`
 - open an existing jetton minter, jetton wallet, NFT/SBT collection or NFT/SBT item in order to perform some action on them (mint, transfer, burn, etc)
+
+### Using with TonConnect
+
+The SDK can be used with [TonConnect](https://github.com/ton-connect/sdk) to send messages to the TON blockchain. To do that, you need to create a [TonConnectProvider](./examples/use-tonconnect.ts) instance and pass it to the SDK. For example:
+```typescript
+// create a new instance of TonConnectUI
+const provider = new TonConnectUI();
+// create a new instance of TonConnectProvider
+const sender = new TonConnectProvider(provider);
+
+const sdk = await AssetsSDK.create({
+    // provide the sender to the SDK  
+    sender,
+});
+```
+
+Now, the SDK will use TonConnect to send messages to the TON blockchain.
+
+### Storing to cells and loading from cells
+
+The SDK also provides a way to store messages in cells and load them from cells. For example:
+
+#### Storing a message in a cell
+
+```typescript
+import {beginCell} from "@ton/core";
+import {storeJettonMintMessage, loadJettonMintMessage} from "@ton/assets-sdk";
+
+// storing a jetton mint message in a cell
+const mintMessage: Cell = beginCell()
+    .store(storeJettonMintMessage({
+        to: Address.parse('RECIEVER_ADDRESS'),
+        amount: toNano(1)
+    })).endCell()
+// getting the base64 representation of the boc
+mintMessage.toBoc().toString('base64')
+```
+
+#### Loading a message from a cell
+
+```typescript
+import {Cell} from "@ton/core";
+import {loadJettonMintMessage} from "@ton/assets-sdk";
+
+// parsing a jetton mint message in a boc base64 to a cell
+const mintMessageCell: Cell = Cell.fromBase64('BASE64_BOC');
+// loading the message from the cell
+const mintMessage: JettonMintMessage = loadJettonMintMessage(mintMessageCell);
+```
 
 ### Jettons
 
@@ -130,9 +198,44 @@ Using the instance, you can do the following:
 - `sendTransfer` - send a message to transfer the item; requires you to be the owner of the item, will not work on an SBT item
 - `getData` - get the raw onchain data of the item
 
-You can also use the `NftItem` class to do the following:
-- `parseTransferBody` - parse the transfer transaction message body to retrieve its parameters
-- `parseTransfer` - same as the above, but parse the whole transaction to retrieve additional parameters
+## CLI usage
+
+It's also an option to use the SDK as a CLI tool. To do that, pick one of the following options:
+```bash
+# global installation
+npm i -g @ton-community/assets-sdk
+assets-cli COMMAND
+
+# local installation
+npm install --save-dev @ton-community/assets-sdk
+npx assets-cli COMMAND
+```
+
+### Commands
+
+> Before running other commands, please run `assets-cli setup-env` first.
+
+| Command                               | Description                                         |
+|---------------------------------------|-----------------------------------------------------|
+| `assets-cli setup-env`                | Sets up the environment for the application.        |
+| `assets-cli get-wallet-state`         | Print your wallet type and balance.                 |
+| `assets-cli cancel-nft-sale`          | Cancel an existing NFT sale.                        |
+| `assets-cli deploy-jetton`            | Create and deploy a new jetton.                     |
+| `assets-cli deploy-nft-collection`    | Create and deploy a new NFT collection.             |
+| `assets-cli get-jetton`               | Print details of an existing jetton.                |
+| `assets-cli get-jetton-balance`       | Print balance of a specific jetton wallet.          |
+| `assets-cli get-nft-collection`       | Print details of an existing NFT collection.        |
+| `assets-cli get-nft-collection-item`  | Print details of an item from the NFT collection.   |
+| `assets-cli get-nft-collection-items` | Print details of all items from the NFT collection. |
+| `assets-cli get-nft-item`             | Print details of an NFT item.                       |
+| `assets-cli get-nft-sale`             | Print details of an NFT sale.                       |
+| `assets-cli mint-jetton`              | Mint jettons and sends them to the wallet.          |
+| `assets-cli mint-nft`                 | Mint NFT to the wallet.                             |
+| `assets-cli mint-sbt`                 | Mint SBT to the wallet.                             |
+| `assets-cli put-nft-for-sale`         | Puts an NFT item for sale.                          |
+| `assets-cli transfer-jetton`          | Transfer jetton to another wallet.                  |
+| `assets-cli transfer-nft`             | Transfer NFT to another wallet.                     |
+| `assets-cli transfer-ton`             | Transfer TON to another wallet.                     |
 
 ## License
 
