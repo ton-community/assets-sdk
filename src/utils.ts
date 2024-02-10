@@ -29,15 +29,15 @@ export function internalOnchainContentToCell(internal: Record<string, string | n
     return beginCell().storeUint(0, 8).storeDict(dict).endCell();
 }
 
-export type Deferred<T> = () => Promise<T>;
+export type Deferred<T, P extends unknown[] = []> = (...args: P) => Promise<T>;
 
-export type DeferredFactory<T> = () => Promise<T>;
+export type DeferredFactory<T, P extends unknown[] = []> = (...args: P) => Promise<T>;
 
-export function defer<T>(factory: DeferredFactory<T>): Deferred<T> {
+export function defer<T, P extends unknown[] = []>(factory: DeferredFactory<T, P>): Deferred<T, P> {
   let promise: Promise<T> | null = null;
-  return () => {
+  return (...args: P) => {
       if (!promise) {
-          promise = Promise.resolve(factory());
+          promise = Promise.resolve(factory(...args));
       }
       return promise;
   };

@@ -7,8 +7,11 @@ import {
     contractAddress,
     ContractProvider,
     Dictionary,
+    internal,
     loadMessageRelaxed,
     MessageRelaxed,
+    Sender,
+    SenderArguments,
     SendMode,
     Slice,
     storeMessageRelaxed
@@ -139,7 +142,7 @@ export class HighloadWalletContractV2 implements Contract {
         timeout?: number | null;
     }, sleepInterval: number = 3000) {
         const transfer = this.createTransfer(args);
-        const { queryId } = this.loadTransfer(transfer.beginParse());
+        const {queryId} = this.loadTransfer(transfer.beginParse());
 
         while (true) {
             try {
@@ -183,7 +186,24 @@ export class HighloadWalletContractV2 implements Contract {
     /**
      * Create sender.
      */
-    // sender(): Extended
+    sender(provider: ContractProvider, secretKey: Buffer): Sender {
+        return {
+            send: async (args: SenderArguments) => {
+                await this.sendTransferAndWait(provider, {
+                    secretKey: secretKey,
+                    sendMode: args.sendMode,
+                    messages: [internal({
+                        to: args.to,
+                        value: args.value,
+                        bounce: args.bounce,
+                        init: args.init,
+                        body: args.body,
+                    })],
+                })
+            },
+            address: this.address,
+        };
+    }
 
 }
 

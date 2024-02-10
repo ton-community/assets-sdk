@@ -1,12 +1,9 @@
 import 'dotenv/config';
-import {createEnv, printAddress, printInfo} from './common';
+import {createEnv, printInfo} from './common';
 import {Address, fromNano, toNano} from '@ton/core';
 import inquirer from 'inquirer';
 import {NftSaleData, NftSaleParams} from "../nft/data";
-import {NftSale} from "../nft/NftSale";
-import {ExtendedOpenedContract} from "../api";
-import {NftItem} from "../nft/NftItem";
-import {AssetsSDK} from "../sdk";
+import {NftTransferMessage} from "../nft/NftItem";
 
 type UserInput = {
     nftAddress: Address;
@@ -107,16 +104,6 @@ async function verifySale(saleData: NftSaleData, saleParams: NftSaleParams) {
     }
 }
 
-async function transferNftToSale(sdk: AssetsSDK, nft: ExtendedOpenedContract<NftItem>, sale: ExtendedOpenedContract<NftSale>) {
-    const transferParams = {
-        to: sale.address,
-        responseDestination: sdk.sender?.address,
-        value: toNano('1'),
-        forwardAmount: toNano('0.05'),
-    };
-    await nft.sendTransfer(transferParams);
-}
-
 export async function main() {
     const {sdk, network} = await createEnv();
     const {nftAddress, price, marketplaceFeeNumerator, marketplaceFeeDenominator} = await promptForUserInput();
@@ -149,7 +136,13 @@ export async function main() {
     const sale = await sdk.deployNftSale(saleParams);
     const saleData = await sale.getData();
     await verifySale(saleData, saleParams);
-    await transferNftToSale(sdk, nft, sale);
+
+    const transferParams: NftTransferMessage = {
+        newOwner: sale.address,
+        responseDestination: sdk.sender?.address,
+        forwardAmount: toNano('0.05'),
+    };
+    await nft.sendTransfer(transferParams, {value: toNano(1)});
     const {nftOwner: seller} = await sale.getData();
 
     const saleInfo = {

@@ -26,77 +26,77 @@ const commands = {
         main: setupEnv,
         description: 'Sets up the environment for the application',
     },
+    'get-wallet-state': {
+        main: getWalletState,
+        description: 'Print your wallet type and balance',
+    },
     'cancel-nft-sale': {
         main: cancelNftSale,
         description: 'Cancels an existing NFT sale',
     },
     'deploy-jetton': {
         main: deployJetton,
-        description: 'Deploys a new jetton',
+        description: 'Create and deploy a new jetton',
     },
     'deploy-nft-collection': {
         main: deployNftCollection,
-        description: 'Deploys a new NFT collection',
-    },
-    'get-wallet-state': {
-        main: getWalletState,
-        description: 'Retrieves state of a specific wallet',
+        description: 'Create and deploy a new NFT collection',
     },
     'get-jetton': {
         main: getJetton,
-        description: 'Retrieves details of an existing jetton',
+        description: 'Print details of an existing jetton',
     },
     'get-jetton-balance': {
         main: getJettonBalance,
-        description: 'Retrieves balance of a specific jetton wallet',
+        description: 'Print balance of a specific jetton wallet',
     },
     'get-nft-collection': {
         main: getNftCollection,
-        description: 'Retrieves details of an existing NFT collection',
+        description: 'Print details of an existing NFT collection',
     },
     'get-nft-collection-item': {
         main: getNftCollectionItem,
-        description: 'Retrieves an item from the NFT collection',
+        description: 'Print details of an item from the NFT collection',
     },
     'get-nft-collection-items': {
         main: getNftCollectionItems,
-        description: 'Retrieves all items from the NFT collection',
+        description: 'Print details of all items from the NFT collection',
     },
     'get-nft-item': {
         main: getNftItem,
-        description: 'Retrieves an NFT item',
+        description: 'Print details of an NFT item',
     },
     'get-nft-sale': {
         main: getNftSale,
-        description: 'Retrieves details of an existing NFT sale',
+        description: 'Print details of an NFT sale',
     },
     'mint-jetton': {
         main: mintJetton,
-        description: 'Mints jettons and sends them to the wallet',
+        description: 'Mint jettons and sends them to the wallet',
     },
     'mint-nft': {
         main: mintNft,
-        description: 'Mints a new NFT item and sends it to the wallet',
+        description: 'Mint NFT to the wallet',
     },
     'mint-sbt': {
         main: mintSbt,
-        description: 'Mints a new SBT item and sends it to the wallet',
-    },
-    'transfer-jetton': {
-        main: transferJetton,
-        description: 'Transfers jettons from one account to another',
-    },
-    'transfer-nft': {
-        main: transferNft,
-        description: 'Transfers an NFT item from one account to another',
-    },
-    'transfer-ton': {
-        main: transferTon,
-        description: 'Transfers TONs from one account to another',
+        description: 'Mint SBT to the wallet',
     },
     'put-nft-for-sale': {
         main: putNftForSale,
         description: 'Puts an NFT item for sale',
+    },
+    'transfer-jetton': {
+        main: transferJetton,
+        description: 'Transfer jetton to another wallet',
+    },
+    'transfer-nft': {
+        main: transferNft,
+        description: 'Transfer NFT to another wallet',
+    },
+    'transfer-ton': {
+        main: transferTon,
+        description: 'Transfer TON to another wallet',
     },
 }
 

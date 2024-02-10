@@ -21,7 +21,7 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 export async function main() {
     const {client, wallet, network} = await createEnv();
     const {address} = await promptForUserInput({
-        defaultOwner: formatAddress(wallet.wallet.address, network)
+        defaultOwner: formatAddress(wallet.address, network)
     });
 
     const masterAt = await client.getLastBlock();

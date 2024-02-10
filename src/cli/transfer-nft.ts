@@ -27,7 +27,7 @@ export async function main() {
     const {nftAddress, recipient} = await promptForUserInput();
 
     const item = sdk.openNftItem(nftAddress);
-    await item.sendTransfer({to: recipient});
+    await item.sendTransfer({newOwner: recipient});
 
     const nftTransferInfo = {
         name: 'Transfer NFT',

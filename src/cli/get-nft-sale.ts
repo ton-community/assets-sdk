@@ -1,4 +1,4 @@
-import {createEnv, formatAddress, printAddress, printInfo} from "./common";
+import {createEnv, formatAddress, printInfo} from "./common";
 import {Address, fromNano} from "@ton/core";
 import inquirer from "inquirer";
 

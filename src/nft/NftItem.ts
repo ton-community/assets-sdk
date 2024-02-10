@@ -1,42 +1,98 @@
-import { Contract, Address, Sender, ContractProvider, toNano, SendMode, beginCell, Cell, Slice, Transaction } from "@ton/core";
-import { NoSenderError } from "../error";
-import {NftTransferRequest, NftItemData, NftTransferBody, NftTransfer} from "./data";
-import { ContentResolver, loadFullContent } from "../content";
-import { ExtendedContractProvider } from "../ExtendedContractProvider";
+import {
+    Address,
+    beginCell,
+    Builder,
+    Cell,
+    Contract,
+    ContractProvider,
+    Sender,
+    SendMode,
+    Slice,
+    toNano
+} from "@ton/core";
+import {NoSenderError} from "../error";
+import {NftItemData} from "./data";
+import {ContentResolver, loadFullContent} from "../content";
+import {ExtendedContractProvider} from "../client/ExtendedContractProvider";
 import {NftCollection, NftRoyaltyParams} from "./NftCollection";
-import { parseNftContent } from "./content";
+import {parseNftContent} from "./content";
 import {nftItemCode} from './contracts/build/nft-item';
-import {sbtItemCode} from './contracts/build/sbt-item';
+
+export type NftTransferMessage = {
+    queryId?: bigint | null;
+    newOwner: Address;
+    responseDestination?: Address | null;
+    customPayload?: Cell | null;
+    forwardAmount?: bigint | null;
+    forwardPayload?: Cell | null;
+};
+
+export function storeNftTransferMessage(message: NftTransferMessage): (builder: Builder) => void {
+    return (builder) => {
+        const {queryId, newOwner, responseDestination, customPayload, forwardAmount, forwardPayload} = message;
+        const OPCODE_TRANSFER = 0x5fcc3d14;
+        builder.storeUint(OPCODE_TRANSFER, 32)
+            .storeUint(queryId ?? 0, 64)
+            .storeAddress(newOwner)
+            .storeAddress(responseDestination)
+            .storeMaybeRef(customPayload)
+            .storeCoins(forwardAmount ?? 0)
+            .storeMaybeRef(forwardPayload);
+    };
+}
+
+export function loadNftTransferMessage(slice: Slice): NftTransferMessage {
+    const OPCODE_TRANSFER = 0x5fcc3d14;
+    if (slice.loadUint(32) !== OPCODE_TRANSFER) {
+        throw new Error('Wrong opcode');
+    }
+    const queryId = slice.loadUintBig(64);
+    const newOwner = slice.loadAddress();
+    const responseDestination = slice.loadMaybeAddress();
+    const customPayload = slice.loadMaybeRef();
+    const forwardAmount = slice.loadCoins();
+    const forwardPayload = slice.loadMaybeRef();
+    return {
+        queryId,
+        newOwner,
+        responseDestination,
+        customPayload,
+        forwardAmount,
+        forwardPayload,
+    };
+}
 
 export class NftItem implements Contract {
     static nftCode = Cell.fromBase64(nftItemCode.codeBoc);
-    static sbtCode = Cell.fromBase64(sbtItemCode.codeBoc);
 
-    constructor(public readonly address: Address, public sender?: Sender, public contentResolver?: ContentResolver) {}
+    constructor(public readonly address: Address, public sender?: Sender, public contentResolver?: ContentResolver) {
+    }
 
-    async sendTransfer(provider: ContractProvider, request: NftTransferRequest) {
+    async sendTransfer(provider: ContractProvider, message: NftTransferMessage, args?: {
+        value?: bigint,
+        bounce?: boolean
+    }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
-        const response = request.responseDestination ?? this.sender.address;
+
         await provider.internal(this.sender, {
-            value: request.value ?? toNano('0.03'),
-            bounce: true,
+            value: args?.value ?? toNano('0.03'),
+            bounce: args?.bounce ?? true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(0x5fcc3d14, 32)
-                .storeUint(request.queryId ?? 0, 64)
-                .storeAddress(request.to)
-                .storeAddress(response)
-                .storeMaybeRef(request.customPayload)
-                .storeCoins(request.forwardAmount ?? 0)
-                .storeMaybeRef(request.forwardPayload)
-                .endCell(),
+            body: beginCell().store(storeNftTransferMessage({
+                queryId: message.queryId,
+                newOwner: message.newOwner,
+                responseDestination: message.responseDestination ?? this.sender.address,
+                customPayload: message.customPayload,
+                forwardAmount: message.forwardAmount,
+                forwardPayload: message.forwardPayload,
+            })).endCell()
         });
     }
 
     async getData(provider: ContractProvider): Promise<NftItemData> {
-        const { stack } = await provider.get('get_nft_data', []);
+        const {stack} = await provider.get('get_nft_data', []);
         return {
             initialized: stack.readBoolean(),
             index: stack.readBigNumber(),
@@ -50,7 +106,7 @@ export class NftItem implements Contract {
         if (this.contentResolver === undefined) {
             throw new Error('No content resolver');
         }
-        const { collection, individualContent, index } = await this.getData(provider);
+        const {collection, individualContent, index} = await this.getData(provider);
         if (individualContent === null) {
             throw new Error('Individual content is null');
         }
@@ -65,7 +121,7 @@ export class NftItem implements Contract {
     }
 
     async getRoyaltyParams(provider: ExtendedContractProvider): Promise<NftRoyaltyParams> {
-        const { collection} = await this.getData(provider);
+        const {collection} = await this.getData(provider);
         if (collection === null) {
             // it's means that royalty stored in nft item
             return this.getNftItemRoyaltyParams(provider);
@@ -76,50 +132,11 @@ export class NftItem implements Contract {
     }
 
     async getNftItemRoyaltyParams(provider: ContractProvider): Promise<NftRoyaltyParams> {
-        const { stack } = await provider.get('get_royalty_params', []);
+        const {stack} = await provider.get('get_royalty_params', []);
         return {
             numerator: stack.readBigNumber(),
             denominator: stack.readBigNumber(),
             recipient: stack.readAddress(),
-        };
-    }
-
-    static parseTransferBody(body: Cell | Slice): NftTransferBody {
-        if (body instanceof Cell) {
-            body = body.beginParse();
-        }
-        if (body.loadUint(32) !== 0x0f8a7ea5) {
-            throw new Error('Wrong opcode');
-        }
-        const queryId = body.loadUintBig(64);
-        const newOwner = body.loadAddress();
-        const responseDestination = body.loadMaybeAddress();
-        const customPayload = body.loadMaybeRef();
-        const forwardAmount = body.loadCoins();
-        const forwardPayloadIsRight = body.loadBoolean();
-        const forwardPayload = forwardPayloadIsRight ? body.loadRef() : body.asCell();
-        return {
-            queryId,
-            newOwner,
-            responseDestination,
-            customPayload,
-            forwardAmount,
-            forwardPayload,
-        };
-    }
-
-    static parseTransfer(tx: Transaction): NftTransfer {
-        if (tx.inMessage?.info.type !== 'internal') {
-            throw new Error('Message must be internal');
-        }
-        if (tx.description.type !== 'generic') {
-            throw new Error('Transaction must be generic');
-        }
-        const body = this.parseTransferBody(tx.inMessage.body);
-        return {
-            ...body,
-            success: (tx.description.computePhase.type === 'vm' && tx.description.computePhase.success && tx.description.actionPhase?.success) ?? false,
-            value: tx.inMessage.info.value.coins,
         };
     }
 }

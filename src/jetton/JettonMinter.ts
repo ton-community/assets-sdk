@@ -6,12 +6,13 @@ import {
     Contract,
     contractAddress,
     ContractProvider,
-    Sender, Slice,
+    Sender,
+    Slice,
     toNano,
     TupleBuilder
 } from "@ton/core";
 import {JettonWallet} from "./JettonWallet";
-import {ExtendedContractProvider} from "../ExtendedContractProvider";
+import {ExtendedContractProvider} from "../client/ExtendedContractProvider";
 import {NoSenderError} from "../error";
 import {ContentResolver, loadFullContent} from "../content";
 import {parseJettonContent} from "./content";

@@ -1,5 +1,5 @@
 import {Address, Cell} from "@ton/core";
-import {AssetsSDK, createHighloadV2, ExtendedTonClient4, PinataStorage, S3Storage} from "..";
+import {AssetsSDK, createHighloadV2, ExtendedTonClient4, importKey, PinataStorage, S3Storage} from "..";
 import {getHttpV4Endpoint} from '@orbs-network/ton-access';
 import {DefaultContentResolver} from "../content";
 import chalk from "chalk";
@@ -7,9 +7,9 @@ import boxen from "boxen";
 
 export type WalletType = 'highload-v2';
 
-export async function createWallet(type: WalletType, mnemonic: string | string[]) {
+export async function createWallet(type: WalletType, publicKey: Buffer) {
     if (type === 'highload-v2') {
-        return await createHighloadV2(mnemonic);
+        return await createHighloadV2(publicKey);
     }
     throw new Error(`Unknown wallet type: ${type}`);
 }
@@ -84,24 +84,24 @@ export async function createEnv() {
 
     const contentResolver = createContentResolver();
     const storage = createStorageEnv();
-    const wallet = await createWallet(process.env.WALLET_TYPE, process.env.MNEMONIC);
     const client = await createClient(process.env.NETWORK);
-    const sdk = await AssetsSDK.create({
+    const keyPair = await importKey(process.env.MNEMONIC);
+    const {publicKey, secretKey} = keyPair;
+    const walletContract = await createWallet(process.env.WALLET_TYPE, publicKey);
+    const wallet = client.openExtended(walletContract).sender(keyPair.secretKey);
+    const sdk = AssetsSDK.create({
         storage,
-        api: {
-            open: c => client.openExtended(c),
-            provider: (a, i) => client.provider(a, i),
-        },
-        wallet,
+        api: client,
+        sender: wallet,
         contentResolver
     });
 
     return {
         sdk,
         network: process.env.NETWORK,
-        storage: await createStorageEnv(),
-        wallet: await createWallet(process.env.WALLET_TYPE, process.env.MNEMONIC),
-        client: await createClient(process.env.NETWORK),
+        storage: storage,
+        wallet: wallet,
+        client: client,
     };
 }
 
@@ -156,7 +156,7 @@ export function printAddress(address: Address | null, network: string, name = 'w
 You can view it at ${formattedAddressLink}`);
 }
 
-export function formatAddress(address: Address | null, network: string): string {
+export function formatAddress(address: Address | null | undefined, network: string): string {
     if (!address) {
         return 'null';
     }
@@ -164,7 +164,7 @@ export function formatAddress(address: Address | null, network: string): string 
     return address.toString({testOnly: network === 'testnet', bounceable: true});
 }
 
-export function formatAddressLink(address: Address | null, network: string): string {
+export function formatAddressLink(address: Address | null | void, network: string): string {
     if (!address) {
         return 'null';
     }

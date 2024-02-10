@@ -1,5 +1,5 @@
-import { Address } from "@ton/core";
-import {createEnv, printAddress, printInfo} from "./common";
+import {Address} from "@ton/core";
+import {createEnv, printInfo} from "./common";
 import inquirer from 'inquirer';
 
 type UserInput = {
@@ -34,8 +34,8 @@ async function promptJettonTransfer(): Promise<UserInput> {
 }
 
 export async function main() {
-    const { sdk, network } = await createEnv();
-    const { address, recipient, amount } = await promptJettonTransfer();
+    const {sdk, network} = await createEnv();
+    const {address, recipient, amount} = await promptJettonTransfer();
 
     const jetton = sdk.openJetton(address);
 
@@ -45,7 +45,7 @@ export async function main() {
     }
 
     const jettonWallet = await jetton.getWallet(senderAddress);
-    await jettonWallet.sendTransfer({ to: recipient, amount: amount });
+    await jettonWallet.sendTransfer({to: recipient, amount: amount});
 
     const jettonTransferInfo = {
         name: 'Transfer jetton',

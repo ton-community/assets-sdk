@@ -2,6 +2,7 @@ import {Address, beginCell, Builder, Cell, contractAddress, ContractProvider, Se
 import {NftCollectionBase} from "./NftCollectionBase";
 import {NftItem} from "./NftItem";
 import {ContentResolver} from "../content";
+import {ExtendedContractProvider} from "../client/ExtendedContractProvider";
 
 export type NftRoyaltyParams = {
     numerator: bigint,
@@ -105,7 +106,7 @@ export class NftCollection<T = string> extends NftCollectionBase<NftItemParams<T
                 recipient: params.royalty?.recipient ?? params.admin,
             },
         })).endCell();
-        const init = { data, code: NftCollection.code };
+        const init = {data, code: NftCollection.code};
         const storeNftItemParams = params.storeNftItemParams || storeNftItemStringParams as (params: NftItemParams<T>) => (builder: Builder) => void;
         const loadNftItemParams = params.loadNftItemParams || loadNftItemStringParams as (slice: Slice) => NftItemParams<T>;
         return new NftCollection<T>(contractAddress(0, init), sender, init, contentResolver, storeNftItemParams, loadNftItemParams);
@@ -121,6 +122,11 @@ export class NftCollection<T = string> extends NftCollectionBase<NftItemParams<T
         storeNftItemParams ||= storeNftItemStringParams as (params: NftItemParams<T>) => (builder: Builder) => void;
         loadNftItemParams ||= loadNftItemStringParams as (slice: Slice) => NftItemParams<T>;
         return new NftCollection<T>(address, sender, undefined, contentResolver, storeNftItemParams, loadNftItemParams);
+    }
+
+    async getItem(provider: ExtendedContractProvider, index: bigint) {
+        const nftItemAddress = await this.getItemAddress(provider, index);
+        return provider.reopen(new NftItem(nftItemAddress, this.sender, this.contentResolver));
     }
 
     async getRoyaltyParams(provider: ContractProvider): Promise<NftRoyaltyParams> {

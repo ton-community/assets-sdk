@@ -1,7 +1,7 @@
-import {createEnv, formatAddress, printAddress, printInfo} from "./common";
+import {createEnv, formatAddress, printInfo} from "./common";
 import inquirer from 'inquirer';
-import { readFile } from 'fs/promises';
-import {Address, Contract} from '@ton/core';
+import {readFile} from 'fs/promises';
+import {Address} from '@ton/core';
 
 type ImageUrl = {
     kind: 'url',
@@ -28,7 +28,7 @@ type UserInput = {
 };
 
 async function promptForUserInput(params: { defaultOwner: string }): Promise<UserInput> {
-    const { address, owner, name, description, image } = await inquirer.prompt([{
+    const {address, owner, name, description, image} = await inquirer.prompt([{
         name: 'address',
         message: 'Enter collection address'
     }, {
@@ -64,11 +64,11 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 
     let formattedImage: Image;
     if (image === '') {
-        formattedImage = { kind: 'none' };
+        formattedImage = {kind: 'none'};
     } else if (image.startsWith('http://') || image.startsWith('https://')) {
-        formattedImage = { kind: 'url', url: image };
+        formattedImage = {kind: 'url', url: image};
     } else {
-        formattedImage = { kind: 'file', file: await readFile(image) };
+        formattedImage = {kind: 'file', file: await readFile(image)};
     }
 
     let formattedDescription: string | undefined;
@@ -86,9 +86,9 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 }
 
 export async function main() {
-    const { sdk, network, wallet } = await createEnv();
-    const { address, owner, name, description, image } = await promptForUserInput({
-        defaultOwner: formatAddress(wallet.wallet.address, network)
+    const {sdk, network, wallet} = await createEnv();
+    const {address, owner, name, description, image} = await promptForUserInput({
+        defaultOwner: formatAddress(wallet.address, network)
     });
 
     const collection = sdk.openSbtCollection(address);
@@ -108,7 +108,7 @@ export async function main() {
         image: uploadedImage,
     }));
     const contentUrl = await sdk.storage.uploadFile(content);
-    const { nextItemIndex: index } = await collection.getData();
+    const {nextItemIndex: index} = await collection.getData();
     await collection.sendMint({
         itemIndex: index,
         itemParams: {

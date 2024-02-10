@@ -6,15 +6,13 @@ import {
     Contract,
     ContractProvider,
     Dictionary,
+    DictionaryValue,
     Sender,
     SendMode,
     Slice,
-    toNano,
-    DictionaryValue
+    toNano
 } from "@ton/core";
-import {ExtendedContractProvider} from "../ExtendedContractProvider";
 import {NoSenderError} from "../error";
-import {NftItem} from "./NftItem";
 import {NftCollectionData} from "./data";
 import {ContentResolver, loadFullContent} from "../content";
 import {parseNftContent} from "./content";
@@ -212,10 +210,14 @@ export abstract class NftCollectionBase<T> implements Contract {
 
     public readonly loadNftItemParams?: (slice: Slice) => T;
 
-    constructor(public readonly address: Address, public sender?: Sender, public readonly init?: {
-        code: Cell,
-        data: Cell
-    }, contentResolver?: ContentResolver, storeNftItemParams?: (src: T) => (builder: Builder) => void, loadNftItemParams?: (slice: Slice) => T) {
+    constructor(
+        public readonly address: Address,
+        public sender?: Sender,
+        public readonly init?: { code: Cell, data: Cell },
+        contentResolver?: ContentResolver,
+        storeNftItemParams?: (src: T) => (builder: Builder) => void,
+        loadNftItemParams?: (slice: Slice) => T
+    ) {
         this.contentResolver = contentResolver;
         this.storeNftItemParams = storeNftItemParams;
         this.loadNftItemParams = loadNftItemParams;
@@ -240,7 +242,10 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendBatchMint(provider: ContractProvider, message: NftBatchMintMessage<T>, args?: { value?: bigint, bounce?: boolean }) {
+    async sendBatchMint(provider: ContractProvider, message: NftBatchMintMessage<T>, args?: {
+        value?: bigint,
+        bounce?: boolean
+    }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
@@ -256,7 +261,7 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendDeploy(provider: ContractProvider, args?: {value?: bigint, bounce?: boolean}) {
+    async sendDeploy(provider: ContractProvider, args?: { value?: bigint, bounce?: boolean }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
@@ -266,7 +271,10 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendChangeAdmin(provider: ContractProvider, message: NftChangeAdminMessage, args?: {value?: bigint, bounce?: boolean}) {
+    async sendChangeAdmin(provider: ContractProvider, message: NftChangeAdminMessage, args?: {
+        value?: bigint,
+        bounce?: boolean
+    }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
@@ -278,7 +286,10 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendChangeContent(provider: ContractProvider, message: NftChangeContentMessage, args?: {value?: bigint, bounce?: boolean}) {
+    async sendChangeContent(provider: ContractProvider, message: NftChangeContentMessage, args?: {
+        value?: bigint,
+        bounce?: boolean
+    }) {
         if (this.sender === undefined) {
             throw new NoSenderError();
         }
@@ -292,11 +303,6 @@ export abstract class NftCollectionBase<T> implements Contract {
 
     async getItemAddress(provider: ContractProvider, index: bigint) {
         return (await provider.get('get_nft_address_by_index', [{type: 'int', value: index}])).stack.readAddress();
-    }
-
-    async getItem(provider: ExtendedContractProvider, index: bigint) {
-        const nftItemAddress = await this.getItemAddress(provider, index);
-        return provider.reopen(new NftItem(nftItemAddress, this.sender, this.contentResolver));
     }
 
     async getData(provider: ContractProvider): Promise<NftCollectionData> {

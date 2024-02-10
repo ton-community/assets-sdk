@@ -1,13 +1,16 @@
-export {AssetsSDK, S3StorageParams, PinataStorageParams} from './sdk';
+export {AssetsSDK} from './sdk';
 
-export {Storage, PinataStorage, S3Storage} from './storage';
+export {Storage} from './storage/storage';
+export {PinataStorage, PinataStorageParams} from './storage/pinata';
+export {S3Storage, S3StorageParams} from './storage/s3';
+export {NoopStorage} from './storage/noop';
 
-export {API, ExtendedOpenedContract} from './api';
-export {ExtendedTonClient4} from './ExtendedTonClient4';
-export {ExtendedContractProvider} from './ExtendedContractProvider';
+export {API, ExtendedOpenedContract} from './client/api';
+export {ExtendedTonClient4} from './client/ExtendedTonClient4';
+export {ExtendedContractProvider} from './client/ExtendedContractProvider';
 
 export {importKey} from './key';
-export {createHighloadV2} from './wallets';
+export {createWallet, createHighloadV2} from './wallets/wallets';
 export {HighloadWalletContractV2} from './wallets/HighloadWalletContractV2';
 
 export {
@@ -36,7 +39,12 @@ export {
     storeSbtItemCellParams,
     storeSbtItemStringParams
 } from './nft/SbtCollection';
-export {NftItem} from './nft/NftItem';
+export {
+    NftItem,
+    NftTransferMessage,
+    loadNftTransferMessage,
+    storeNftTransferMessage
+} from './nft/NftItem';
 export {NftSale} from './nft/NftSale';
 export {NftContent} from './nft/content';
 

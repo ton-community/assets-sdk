@@ -1,8 +1,9 @@
 import {Address, beginCell, Builder, Cell, contractAddress, Sender, Slice} from "@ton/core";
 import {NftCollectionBase} from "./NftCollectionBase";
-import {NftItem} from "./NftItem";
 import {ContentResolver} from "../content";
 import {NftRoyaltyParams, storeNftCollectionData} from './NftCollection';
+import {SbtItem} from "./SbtItem";
+import {ExtendedContractProvider} from "../client/ExtendedContractProvider";
 
 export type SbtItemParams<T> = {
     owner: Address,
@@ -57,7 +58,7 @@ export class SbtCollection<T = string> extends NftCollectionBase<SbtItemParams<T
         const data = beginCell().store(storeNftCollectionData({
             admin: params.admin,
             content: params.content,
-            itemCode: NftItem.sbtCode,
+            itemCode: SbtItem.sbtCode,
             royalty: {
                 numerator: params.royalty?.numerator ?? 0n,
                 denominator: params.royalty?.denominator ?? 1n,
@@ -80,5 +81,10 @@ export class SbtCollection<T = string> extends NftCollectionBase<SbtItemParams<T
         storeSbtItemParams ??= storeSbtItemStringParams as (params: SbtItemParams<T>) => (builder: Builder) => void;
         loadSbtItemParams ??= loadSbtItemStringParams as (slice: Slice) => SbtItemParams<T>;
         return new SbtCollection(address, sender, undefined, contentResolver, storeSbtItemParams, loadSbtItemParams);
+    }
+
+    async getItem(provider: ExtendedContractProvider, index: bigint) {
+        const nftItemAddress = await this.getItemAddress(provider, index);
+        return provider.reopen(new SbtItem(nftItemAddress, this.sender, this.contentResolver));
     }
 }

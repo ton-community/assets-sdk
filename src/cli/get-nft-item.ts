@@ -1,4 +1,4 @@
-import {createEnv, formatAddress, printAddress, printInfo} from "./common";
+import {createEnv, printInfo} from "./common";
 import {Address} from "@ton/core";
 import inquirer from "inquirer";
 

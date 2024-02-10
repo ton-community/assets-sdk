@@ -1,6 +1,6 @@
 import {createEnv, printInfo} from "./common";
 import inquirer from 'inquirer';
-import { readFile } from 'fs/promises';
+import {readFile} from 'fs/promises';
 
 type ImageUrl = {
     kind: 'url',
@@ -27,7 +27,7 @@ type UserInput = {
 };
 
 async function promptForUserInput(): Promise<UserInput> {
-    const { name, description, image, symbol, decimals } = await inquirer.prompt([{
+    const {name, description, image, symbol, decimals} = await inquirer.prompt([{
         name: 'name',
         message: 'Enter jetton name',
     }, {
@@ -68,11 +68,11 @@ async function promptForUserInput(): Promise<UserInput> {
 
     let formattedImage: Image;
     if (image === '') {
-        formattedImage = { kind: 'none' };
+        formattedImage = {kind: 'none'};
     } else if (image.startsWith('http://') || image.startsWith('https://')) {
-        formattedImage = { kind: 'url', url: image };
+        formattedImage = {kind: 'url', url: image};
     } else {
-        formattedImage = { kind: 'file', file: await readFile(image) };
+        formattedImage = {kind: 'file', file: await readFile(image)};
     }
 
     let formattedDescription: string | undefined;
@@ -90,8 +90,8 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const { sdk, network } = await createEnv();
-    const { name, description, image, symbol, decimals } = await promptForUserInput();
+    const {sdk, network} = await createEnv();
+    const {name, description, image, symbol, decimals} = await promptForUserInput();
 
     let uploadImage: string | undefined;
     if (image.kind === 'url') {

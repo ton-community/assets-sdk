@@ -1,7 +1,8 @@
 import inquirer from 'inquirer';
-import { mnemonicNew } from '@ton/crypto';
-import { writeFile } from 'fs/promises';
+import {mnemonicNew} from '@ton/crypto';
+import {writeFile} from 'fs/promises';
 import {createWallet, printAddress, WalletType} from './common';
+import {importKey} from "../key";
 
 type S3Storage = {
     kind: 's3';
@@ -27,7 +28,7 @@ type Env = {
 }
 
 export async function main() {
-    const { network, wallet } = await inquirer.prompt([{
+    const {network, wallet} = await inquirer.prompt([{
         name: 'network',
         message: 'Which network to use?',
         choices: ['mainnet', 'testnet'],
@@ -47,9 +48,11 @@ export async function main() {
         ['WALLET_TYPE', wallet],
     ];
 
-    const address = (await createWallet(wallet, mnemonic)).wallet.address;
+    const keyPair = await importKey(mnemonic);
+    const walletContract = await createWallet(wallet, keyPair.publicKey);
+    const address = walletContract.address;
 
-    const { storage }  = await inquirer.prompt([{
+    const {storage} = await inquirer.prompt([{
         name: 'storage',
         message: 'Which storage to use?',
         choices: ['pinata', 's3'],
@@ -95,13 +98,13 @@ export async function main() {
     if (ipfsGateway === 'ipfs.io') {
         pairs.push(['IPFS_GATEWAY', 'https://ipfs.io/']);
     } else if (ipfsGateway === 'https') {
-        const { gateway } = await inquirer.prompt([{
+        const {gateway} = await inquirer.prompt([{
             name: 'gateway',
             message: 'Please enter the IPFS gateway to use (e.g. https://ipfs.io/)',
         }]);
         pairs.push(['IPFS_GATEWAY', gateway]);
     } else if (ipfsGateway === 'pinata') {
-        const { gateway, apikey } = await inquirer.prompt([{
+        const {gateway, apikey} = await inquirer.prompt([{
             name: 'gateway',
             message: 'Please enter the IPFS gateway to use (e.g. https://gateway.pinata.cloud/)',
         }, {

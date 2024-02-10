@@ -1,7 +1,6 @@
 import {createEnv, printInfo} from "./common";
 import {Address} from "@ton/core";
 import inquirer from "inquirer";
-import chalk from "chalk";
 
 type UserInput = {
     collectionAddress: Address;
@@ -28,7 +27,7 @@ export async function main() {
     const {collectionAddress, index} = await promptForUserInput();
 
     const collection = sdk.openNftCollection(collectionAddress);
-    const { nextItemIndex } = await collection.getData();
+    const {nextItemIndex} = await collection.getData();
     if (index >= nextItemIndex) {
         throw new Error(`item with index ${index} does not exist in collection`);
     }

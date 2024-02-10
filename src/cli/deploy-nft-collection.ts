@@ -118,7 +118,7 @@ async function promptForUserInput(params: { defaultRoyaltyRecipient: string }): 
 export async function main() {
     const {sdk, network, wallet} = await createEnv();
     const {name, description, image, type, royaltyParams} = await promptForUserInput({
-        defaultRoyaltyRecipient: formatAddress(wallet.wallet.address, network)
+        defaultRoyaltyRecipient: formatAddress(wallet.address, network)
     });
 
     let uploadedImage: string | undefined;

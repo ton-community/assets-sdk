@@ -1,36 +1,11 @@
-import type PinataClient from '@pinata/sdk';
-import type {S3} from '@aws-sdk/client-s3';
-import {Readable} from 'stream';
-import {defer, Deferred} from "./utils";
+import {defer, Deferred} from "../utils";
+import type {S3} from "@aws-sdk/client-s3";
+import {Storage} from "./storage";
 
-export interface Storage {
-    uploadFile(contents: Buffer): Promise<string>;
-}
-
-export class PinataStorage implements Storage {
-    private readonly apiKey: string;
-
-    private readonly secretApiKey: string;
-
-    private readonly client: Deferred<PinataClient> = defer(async () => {
-        const ctor = await import('@pinata/sdk').then((m) => m.default);
-        return new ctor(this.apiKey, this.secretApiKey);
-    });
-
-    constructor(apiKey: string, secretApiKey: string) {
-        this.apiKey = apiKey;
-        this.secretApiKey = secretApiKey;
-    }
-
-    async uploadFile(contents: Buffer): Promise<string> {
-        const client = await this.client();
-
-        return 'ipfs://' + (await client.pinFileToIPFS(Readable.from(contents), {
-            pinataMetadata: {
-                name: 'Assets SDK Jetton',
-            }
-        })).IpfsHash;
-    }
+export interface S3StorageParams {
+    s3AccessKeyId: string
+    s3SecretAccessKey: string
+    s3Bucket: string
 }
 
 export class S3Storage implements Storage {
@@ -50,6 +25,10 @@ export class S3Storage implements Storage {
             },
         });
     });
+
+    public static create(params: S3StorageParams) {
+        return new S3Storage(params.s3AccessKeyId, params.s3SecretAccessKey, params.s3Bucket);
+    }
 
     constructor(accessKeyId: string, secretAccessKey: string, bucket: string) {
         this.accessKeyId = accessKeyId;
