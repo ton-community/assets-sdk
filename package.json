@@ -14,7 +14,7 @@
     "scripts": {
         "build": "npm run compile && tsc",
         "compile": "ts-node ./src/jetton/contracts/compile.ts && ts-node ./src/nft/contracts/compile.ts",
-        "postinstall": "npm run compile",
+        "prepare": "npm run compile",
         "dev": "tsc -w"
     },
     "files": [
