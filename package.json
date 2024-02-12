@@ -12,8 +12,8 @@
         "stream": false
     },
     "scripts": {
-        "build": "npm run compile && tsc",
-        "compile": "ts-node ./src/jetton/contracts/compile.ts && ts-node ./src/nft/contracts/compile.ts",
+        "build": "tsc && node ./copy-func-files.js && npm run compile",
+        "compile": "node ./dist/jetton/contracts/compile.js && node ./dist/nft/contracts/compile.js",
         "postinstall": "npm run compile",
         "dev": "tsc -w"
     },
