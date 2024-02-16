@@ -19,7 +19,7 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {nftAddress} = await promptForUserInput();
 
     const nft = sdk.openNftItem(nftAddress);
@@ -51,7 +51,7 @@ export async function main() {
     if (!confirm) {
         return;
     }
-    await sale.sendCancel(toNano('1'));
+    await sale.sendCancel(sender, toNano('1'));
 
     const cancelledSaleInfo = {
         name: 'Cancelled NFT Sale',

@@ -3,7 +3,7 @@ import {createEnv, printInfo} from './common';
 import {Address, fromNano, toNano} from '@ton/core';
 import inquirer from 'inquirer';
 import {NftSaleData, NftSaleParams} from "../nft/data";
-import {NftTransferMessage} from "../nft/NftItem";
+
 
 type UserInput = {
     nftAddress: Address;
@@ -105,7 +105,7 @@ async function verifySale(saleData: NftSaleData, saleParams: NftSaleParams) {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {nftAddress, price, marketplaceFeeNumerator, marketplaceFeeDenominator} = await promptForUserInput();
 
     const nft = sdk.openNftItem(nftAddress);
@@ -137,12 +137,7 @@ export async function main() {
     const saleData = await sale.getData();
     await verifySale(saleData, saleParams);
 
-    const transferParams: NftTransferMessage = {
-        newOwner: sale.address,
-        responseDestination: sdk.sender?.address,
-        forwardAmount: toNano('0.05'),
-    };
-    await nft.sendTransfer(transferParams, {value: toNano(1)});
+    await nft.send(sender, sale.address, { notify: true, returnExcess: true }, toNano('0.05'));
     const {nftOwner: seller} = await sale.getData();
 
     const saleInfo = {

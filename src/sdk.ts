@@ -2,25 +2,30 @@ import {Address, beginCell, Sender, toNano} from "@ton/core";
 import {Storage} from "./storage/storage";
 import {PinataStorage, PinataStorageParams} from "./storage/pinata";
 import {S3Storage, S3StorageParams} from "./storage/s3";
-import {API} from "./client/api";
+import {TonClientApi} from "./client/ton-client-api";
 import {JettonContent, jettonContentToInternal} from "./jetton/content";
 import {JettonParams} from "./jetton/data";
 import {NftContent, nftContentToInternal} from "./nft/content";
 import {internalOnchainContentToCell} from "./utils";
 import {JettonWallet} from "./jetton/JettonWallet";
 import {JettonMinter} from "./jetton/JettonMinter";
-import {NftCollection, NftItemParams, NftRoyaltyParams} from "./nft/NftCollection";
+import {NftCollection} from "./nft/NftCollection";
 import {NftItem} from "./nft/NftItem";
 import {SbtCollection} from "./nft/SbtCollection";
 import {NftSaleParams} from "./nft/data";
 import {ContentResolver, DefaultContentResolver} from "./content";
 import {NftSale} from "./nft/NftSale";
-import {NftMintMessage} from "./nft/NftCollectionBase";
 import { NoopStorage } from "./storage/noop";
+import {NftItemParams, NftItemParamsValue, NftRoyaltyParams} from "./nft/NftCollection.data";
+import {NftMintItemParams, NftMintMessage} from "./nft/NftCollectionBase.data";
+import {SbtItemParams} from "./nft/SbtCollection.data";
+import {SendTransferOptions} from "./common/types";
+
+const WORKCHAIN = 0;
 
 export class AssetsSDK {
     static create(params: {
-        api: API,
+        api: TonClientApi,
         storage?: PinataStorageParams | S3StorageParams | Storage,
         sender?: Sender,
         contentResolver?: ContentResolver,
@@ -42,109 +47,123 @@ export class AssetsSDK {
 
     constructor(
         public readonly storage: Storage,
-        public readonly api: API,
+        public readonly api: TonClientApi,
         public readonly sender?: Sender,
         public readonly contentResolver?: ContentResolver
     ) {}
 
-    async deployJetton(content: JettonContent, options?: JettonParams) {
-        const adminAddress = options?.adminAddress ?? this.sender?.address;
+    async deployJetton(content: JettonContent, adminAddress?: Address, premintAmount?: bigint, premintOptions?: SendTransferOptions, value?: bigint, queryId?: bigint) {
+        if (!this.sender) {
+            throw new Error('Sender must be defined');
+        }
+
+        adminAddress ??= this.sender?.address;
         if (adminAddress === undefined) {
             throw new Error('Admin address must be defined in options or be available in Sender');
         }
-        const jetton = this.api.openExtended(JettonMinter.create({
+
+        const jettonMinterContract = JettonMinter.createFromConfig({
             admin: adminAddress,
-            content: await this.contentToCell(jettonContentToInternal(content), options?.onchainContent ?? false),
-        }, this.sender, this.contentResolver));
-        const value = options?.value ?? toNano('0.05');
-        if (options?.premint === undefined) {
-            await jetton.sendDeploy({value});
+            content: await this.contentToCell(jettonContentToInternal(content), content?.onchainContent ?? false),
+        }, JettonMinter.code, WORKCHAIN, this.contentResolver);
+        const jetton = this.api.open(jettonMinterContract);
+
+        if (typeof premintAmount === 'bigint' && premintAmount > 0n) {
+            await jetton.sendDeploy(this.sender, value);
         } else {
-            await jetton.sendMint(options.premint, {value: value});
+            await jetton.sendMint(this.sender, adminAddress, premintAmount, premintOptions, value, queryId);
         }
         return jetton;
     }
 
     openJetton(address: Address) {
-        return this.api.openExtended(JettonMinter.open(address, this.sender, this.contentResolver));
+        return this.api.open(JettonMinter.createFromAddress(address, this.contentResolver));
     }
 
-    async deployNftCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
+    async deployNftCollection(content: { collectionContent: NftContent, commonContent: string, onchainContent?: boolean }, options?: {
         royaltyParams?: NftRoyaltyParams,
-        onchainContent?: boolean,
-        adminAddress?: Address,
-        premint?: NftMintMessage<NftItemParams<string>>,
-        value?: bigint,
-    }) {
+        adminAddress?: Address
+    }, premintItems?: NftMintItemParams<NftItemParams>[], value?: bigint, queryId?: bigint) {
+        if (!this.sender) {
+            throw new Error('Sender must be defined');
+        }
+
         const adminAddress = options?.adminAddress ?? this.sender?.address;
         if (adminAddress === undefined) {
             throw new Error('Admin address must be defined in options or be available in Sender');
         }
-        const collection = this.api.openExtended(NftCollection.create({
+
+        const collection = this.api.open(NftCollection.createFromConfig({
             admin: adminAddress,
             content: beginCell()
-                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
+                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), content?.onchainContent ?? false))
                 .storeRef(beginCell().storeStringTail(content.commonContent))
                 .endCell(),
             royalty: options?.royaltyParams,
-        }, this.sender, this.contentResolver));
-        const value = options?.value ?? toNano('0.05');
-        if (options?.premint === undefined) {
-            await collection.sendDeploy({value: value});
+        }, NftCollection.code, WORKCHAIN, this.contentResolver));
+
+        if (typeof premintItems?.length === 'number' && premintItems.length > 0) {
+            await collection.sendBatchMint(this.sender, premintItems, value, queryId);
         } else {
-            await collection.sendMint(options.premint, {value: value});
+            await collection.sendDeploy(this.sender, value);
         }
+
         return collection;
     }
 
     openNftCollection(address: Address) {
-        return this.api.openExtended(NftCollection.open(address, this.sender, this.contentResolver));
+        return this.api.open(NftCollection.createFromAddress(address, this.contentResolver));
     }
 
-    async deploySbtCollection(content: { collectionContent: NftContent, commonContent: string }, options?: {
-        onchainContent?: boolean,
-        adminAddress?: Address,
-        premint?: NftMintMessage<NftItemParams<string>>,
-        value?: bigint,
-    }) {
-        const adminAddress = options?.adminAddress ?? this.sender?.address;
+    async deploySbtCollection(content: { collectionContent: NftContent, commonContent: string, onchainContent?: boolean }, adminAddress?: Address, premintItems?: NftMintItemParams<SbtItemParams>[], value?: bigint, queryId?: bigint) {
+        if (!this.sender) {
+            throw new Error('Sender must be defined');
+        }
+
+        adminAddress ??= this.sender?.address;
         if (adminAddress === undefined) {
             throw new Error('Admin address must be defined in options or be available in Sender');
         }
-        const collection = this.api.openExtended(SbtCollection.create({
+
+        const collection = this.api.open(SbtCollection.createFromConfig({
             admin: adminAddress,
             content: beginCell()
-                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
+                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), content?.onchainContent ?? false))
                 .storeRef(beginCell().storeStringTail(content.commonContent))
                 .endCell(),
-        }, this.sender, this.contentResolver));
-        const value = options?.value ?? toNano('0.05');
-        if (options?.premint === undefined) {
-            await collection.sendDeploy({ value: value });
+        }, SbtCollection.code, WORKCHAIN, this.contentResolver));
+
+        if (typeof premintItems?.length === 'number' && premintItems.length > 0) {
+            await collection.sendBatchMint(this.sender, premintItems, value, queryId);
         } else {
-            await collection.sendMint(options.premint, {value: value});
+            await collection.sendDeploy(this.sender, value);
         }
+
         return collection;
     }
 
     openSbtCollection(address: Address) {
-        return this.api.openExtended(SbtCollection.open(address, this.sender, this.contentResolver));
+        return this.api.open(SbtCollection.createFromAddress(address, this.contentResolver));
     }
 
     openJettonWallet(address: Address) {
-        return this.api.openExtended(new JettonWallet(address, this.sender));
+        return this.api.open(new JettonWallet(address));
     }
 
     openNftItem(address: Address) {
-        return this.api.openExtended(new NftItem(address, this.sender, this.contentResolver));
+        return this.api.open(new NftItem(address, undefined, this.contentResolver));
     }
 
     async deployNftSale(params: NftSaleParams) {
+        if (!this.sender) {
+            throw new Error('Sender must be defined');
+        }
+
         const marketplaceAddress = params.marketplace ?? this.sender?.address
         if (marketplaceAddress === undefined) {
             throw new Error('Marketplace address must be defined in options or be available in Sender');
         }
-        const sale = this.api.openExtended(NftSale.create({
+        const sale = this.api.open(NftSale.createFromConfig({
             createdAt: params.createdAt ?? Math.floor(Date.now() / 1000),
             marketplace: params.marketplace ?? null,
             nft: params.nft,
@@ -154,14 +173,13 @@ export class AssetsSDK {
             royaltyTo: params.royaltyTo ?? null,
             royalty: params.royalty ?? 0n,
             canDeployByExternal: params.canDeployByExternal ?? true,
-        }, this.sender));
-        const value = params.value ?? toNano('0.05');
-        await sale.sendTopup(value, params.queryId);
+        }));
+        await sale.sendTopup(this.sender, params.value, params.queryId);
         return sale;
     }
 
     openNftSale(address: Address) {
-        return this.api.openExtended(NftSale.open(address, this.sender));
+        return this.api.open(NftSale.createFromAddress(address));
     }
 
     private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {

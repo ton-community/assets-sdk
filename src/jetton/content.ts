@@ -1,4 +1,4 @@
-import {Dictionary} from "@ton/core";
+import {Address, Dictionary} from "@ton/core";
 import z from "zod";
 import {bufferToStr, DecodedContent, decodeImage, decodeSimpleFields, ParsedContent} from "../content";
 
@@ -12,6 +12,7 @@ export interface JettonContent {
     decimals?: number,
     amountStyle?: 'n' | 'n-of-total' | '%',
     renderType?: 'currency' | 'game',
+    onchainContent?: boolean;
 }
 
 export function jettonContentToInternal(content: JettonContent) {

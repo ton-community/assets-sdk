@@ -42,3 +42,5 @@ export function defer<T, P extends unknown[] = []>(factory: DeferredFactory<T, P
       return promise;
   };
 }
+
+export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

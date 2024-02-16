@@ -2,7 +2,7 @@ import {createEnv, formatAddress, printInfo} from "./common";
 import inquirer from 'inquirer';
 import {readFile} from 'fs/promises';
 import {Address} from "@ton/core";
-import {NftRoyaltyParams} from "../nft/NftCollection";
+import {NftRoyaltyParams} from "../nft/NftCollection.data";
 
 type ImageUrl = {
     kind: 'url',
@@ -116,9 +116,9 @@ async function promptForUserInput(params: { defaultRoyaltyRecipient: string }): 
 }
 
 export async function main() {
-    const {sdk, network, wallet} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {name, description, image, type, royaltyParams} = await promptForUserInput({
-        defaultRoyaltyRecipient: formatAddress(wallet.address, network)
+        defaultRoyaltyRecipient: formatAddress(sender.address, network)
     });
 
     let uploadedImage: string | undefined;

@@ -1,5 +1,6 @@
 import {Address, Cell} from "@ton/core";
-import {AssetsSDK, createHighloadV2, ExtendedTonClient4, importKey, PinataStorage, S3Storage} from "..";
+import {TonClient4} from "@ton/ton";
+import {AssetsSDK, createHighloadV2, importKey, PinataStorage, S3Storage} from "..";
 import {getHttpV4Endpoint} from '@orbs-network/ton-access';
 import {DefaultContentResolver} from "../content";
 import chalk from "chalk";
@@ -18,7 +19,7 @@ export async function createClient(network: string) {
     if (!(network === 'testnet' || network === 'mainnet')) {
         throw new Error(`Unknown network: ${network}`);
     }
-    return new ExtendedTonClient4({
+    return new TonClient4({
         endpoint: await getHttpV4Endpoint({
             network,
         }),
@@ -87,12 +88,14 @@ export async function createEnv() {
     const client = await createClient(process.env.NETWORK);
     const keyPair = await importKey(process.env.MNEMONIC);
     const {publicKey, secretKey} = keyPair;
+
     const walletContract = await createWallet(process.env.WALLET_TYPE, publicKey);
-    const wallet = client.openExtended(walletContract).sender(keyPair.secretKey);
+    const sender = client.open(walletContract).sender(keyPair.secretKey);
+
     const sdk = AssetsSDK.create({
         storage,
         api: client,
-        sender: wallet,
+        sender: sender,
         contentResolver
     });
 
@@ -100,7 +103,7 @@ export async function createEnv() {
         sdk,
         network: process.env.NETWORK,
         storage: storage,
-        wallet: wallet,
+        sender: sender,
         client: client,
     };
 }

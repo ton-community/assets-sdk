@@ -1,6 +1,6 @@
 import {Address, toNano} from "@ton/core";
 import {AssetsSDK, importKey, PinataStorageParams} from "../src";
-import {createApi} from "../src/client/api";
+import {createApi} from "../src/client/ton-client-api";
 import {createSender} from "../src/wallets/wallets";
 
 async function main() {
@@ -28,7 +28,7 @@ async function main() {
 
     const RECEIVER_ADDRESS = Address.parse('RECEIVER_ADDRESS');
     const myJettonWallet = await jetton.getWallet(sdk.sender!.address!);
-    await myJettonWallet.sendTransfer({to: RECEIVER_ADDRESS, amount: toNano(10)});
+    await myJettonWallet.send(sender, RECEIVER_ADDRESS, toNano(10));
 }
 
 main().catch(console.error);

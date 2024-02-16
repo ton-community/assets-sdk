@@ -5,51 +5,81 @@ export {PinataStorage, PinataStorageParams} from './storage/pinata';
 export {S3Storage, S3StorageParams} from './storage/s3';
 export {NoopStorage} from './storage/noop';
 
-export {API, ExtendedOpenedContract} from './client/api';
-export {ExtendedTonClient4} from './client/ExtendedTonClient4';
-export {ExtendedContractProvider} from './client/ExtendedContractProvider';
+export {TonClientApi} from './client/ton-client-api';
 
 export {importKey} from './key';
 export {createWallet, createHighloadV2} from './wallets/wallets';
 export {HighloadWalletContractV2} from './wallets/HighloadWalletContractV2';
 
+export {NftCollection, NftCollectionConfig, nftCollectionConfigToCell} from './nft/NftCollection';
 export {
-    NftCollection,
-    NftRoyaltyParams,
-    NftItemParams,
-    NftItemStringParams,
-    NftItemCellParams,
+    NftMintItem,
+    NftMintItemParams,
+    NftMintMessage,
+    NftBatchMintMessage,
+    NftChangeAdminMessage,
+    NftChangeContentMessage,
     NftCollectionData,
-    loadNftItemStringParams,
-    loadNftItemCellParams,
-    loadNftRoyaltyParams,
+    loadNftBatchMintItem,
+    loadNftBatchMintMessage,
+    loadNftChangeAdminMessage,
+    loadNftChangeContentMessage,
     loadNftCollectionData,
-    storeNftRoyaltyParams,
-    storeNftItemCellParams,
-    storeNftItemStringParams,
-    storeNftCollectionData
-} from './nft/NftCollection';
+    loadNftMintMessage,
+    storeNftCollectionData,
+    storeNftBatchMintItem,
+    storeNftBatchMintMessage,
+    storeNftChangeAdminMessage,
+    storeNftChangeContentMessage,
+    storeNftMintMessage,
+    createNftMintItemValue
+} from './nft/NftCollectionBase.data';
 export {
-    SbtCollection,
+    NftItemParams,
+    NftRoyaltyParams,
+    NftItemParamsValue,
+    loadNftItemParams,
+    loadNftRoyaltyParams,
+    storeNftItemParams,
+    storeNftRoyaltyParams
+} from './nft/NftCollection.data';
+export {SbtCollection, SbtCollectionConfig, sbtCollectionConfigToCell} from './nft/SbtCollection';
+export {
     SbtItemParams,
-    SbtItemCellParams,
-    SbtItemStringParams,
-    loadSbtItemCellParams,
-    loadSbtItemStringParams,
-    storeSbtItemCellParams,
-    storeSbtItemStringParams
-} from './nft/SbtCollection';
+    SbtItemParamsValue,
+    loadSbtItemParams,
+    storeSbtItemParams,
+    createSbtItemParamsValue
+} from './nft/SbtCollection.data';
+export {NftItem, NftItemConfig, nftItemConfigToCell, ParsedTransaction} from './nft/NftItem';
 export {
-    NftItem,
+    NftMessage,
     NftTransferMessage,
+    NftDeployMessage,
+    NftGetStaticDataMessage,
+    NftOwnerAssignedMessage,
+    NftReportStaticDataMessage,
+    OPCODE_GET_STATIC_DATA,
+    OPCODE_OWNER_ASSIGNED,
+    OPCODE_REPORT_STATIC_DATA,
+    OPCODE_TRANSFER,
+    loadNftMessage,
+    loadNftDeployMessage,
+    loadNftGetStaticDataMessage,
+    loadNftOwnerAssignedMessage,
+    loadNftReportStaticDataMessage,
     loadNftTransferMessage,
-    storeNftTransferMessage
-} from './nft/NftItem';
+    storeNftTransferMessage,
+    storeNftDeployMessage,
+    storeNftGetStaticDataMessage,
+    storeNftOwnerAssignedMessage,
+    storeNftReportStaticDataMessage
+} from './nft/NftItem.tlb';
 export {NftSale} from './nft/NftSale';
 export {NftContent} from './nft/content';
 
+export {JettonMinter} from './jetton/JettonMinter';
 export {
-    JettonMinter,
     JettonMinterContent,
     JettonMinterData,
     JettonChangeContentMessage,
@@ -65,9 +95,9 @@ export {
     storeJettonInternalTransferMessage,
     storeJettonMinterContent,
     storeJettonMintMessage
-} from './jetton/JettonMinter';
+} from './jetton/JettonMinter.tlb';
+export {JettonWallet} from './jetton/JettonWallet';
 export {
-    JettonWallet,
     JettonBurnMessage,
     JettonTransferMessage,
     JettonWalletData,
@@ -75,7 +105,7 @@ export {
     storeJettonBurnMessage,
     storeJettonTransferMessage,
     loadJettonTransferMessage
-} from './jetton/JettonWallet';
+} from './jetton/JettonWallet.tlb';
 export {JettonContent} from './jetton/content';
 
 export {NoSenderError} from './error';

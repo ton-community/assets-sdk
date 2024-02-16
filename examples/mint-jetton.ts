@@ -1,6 +1,6 @@
 import {toNano} from "@ton/core";
 import {AssetsSDK, importKey, PinataStorageParams} from "../src";
-import {createApi} from "../src/client/api";
+import {createApi} from "../src/client/ton-client-api";
 import {createSender} from "../src/wallets/wallets";
 
 async function main() {

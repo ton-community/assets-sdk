@@ -24,9 +24,9 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 }
 
 export async function main() {
-    const {sdk, network, wallet} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {jettonAddress, ownerAddress} = await promptForUserInput({
-        defaultOwner: formatAddress(wallet.address, network)
+        defaultOwner: formatAddress(sender.address, network)
     });
 
     const jetton = sdk.openJetton(jettonAddress);

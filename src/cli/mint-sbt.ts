@@ -86,9 +86,9 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 }
 
 export async function main() {
-    const {sdk, network, wallet} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {address, owner, name, description, image} = await promptForUserInput({
-        defaultOwner: formatAddress(wallet.address, network)
+        defaultOwner: formatAddress(sender.address, network)
     });
 
     const collection = sdk.openSbtCollection(address);
@@ -109,12 +109,10 @@ export async function main() {
     }));
     const contentUrl = await sdk.storage.uploadFile(content);
     const {nextItemIndex: index} = await collection.getData();
-    await collection.sendMint({
-        itemIndex: index,
-        itemParams: {
-            owner: owner,
-            individualContent: contentUrl,
-        }
+    await collection.sendMint(sender, {
+        index: index,
+        owner: owner,
+        individualContent: contentUrl,
     });
 
     const sbtItem = await collection.getItem(index);

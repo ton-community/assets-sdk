@@ -34,7 +34,7 @@ async function promptJettonTransfer(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {address, recipient, amount} = await promptJettonTransfer();
 
     const jetton = sdk.openJetton(address);
@@ -45,7 +45,7 @@ export async function main() {
     }
 
     const jettonWallet = await jetton.getWallet(senderAddress);
-    await jettonWallet.sendTransfer({to: recipient, amount: amount});
+    await jettonWallet.send(sender, recipient, amount);
 
     const jettonTransferInfo = {
         name: 'Transfer jetton',
