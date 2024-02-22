@@ -1,4 +1,4 @@
-import {createEnv, formatAddress, printInfo} from "./common";
+import {createEnv, formatAddress, printInfo, retry} from "./common";
 import inquirer from 'inquirer';
 import {readFile} from 'fs/promises';
 import {Address} from "@ton/core";
@@ -126,7 +126,7 @@ export async function main() {
     if (image.kind === 'url') {
         uploadedImage = image.url;
     } else if (image.kind === 'file') {
-        uploadedImage = await sdk.storage.uploadFile(image.file);
+        uploadedImage = await retry(() => sdk.storage.uploadFile(image.file), {name: 'upload image'});
     } else {
         uploadedImage = undefined;
     }

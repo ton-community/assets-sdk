@@ -21,13 +21,13 @@ export function parseNotifyOptions(options: boolean | NotifyOptions | undefined)
 
     if (typeof options === 'object') {
         return {
-            amount: options.amount ?? toNano('0.02'),
+            amount: options.amount ?? toNano('0.01'),
             payload: options.payload ?? null,
         };
     }
 
     return {
-        amount: toNano('0.02'),
+        amount: toNano('0.01'),
         payload: null,
     };
 }

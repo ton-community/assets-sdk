@@ -12,6 +12,7 @@ export type JettonMinterMintAction = {
     forwardPayload: Cell | null,
     forwardTonAmount: bigint,
     value: bigint,
+    transaction: Transaction,
 }
 export type JettonMinterBurnAction = {
     kind: 'burn',
@@ -19,18 +20,21 @@ export type JettonMinterBurnAction = {
     amount: bigint,
     from: Address,
     value: bigint,
+    transaction: Transaction,
 }
 export type JettonMinterChangeAdminAction = {
     kind: 'change_admin',
     queryId: bigint,
     newAdmin: Address,
     value: bigint,
+    transaction: Transaction,
 }
 export type JettonMinterChangeContentAction = {
     kind: 'change_content',
     queryId: bigint,
     newContent: Cell,
     value: bigint,
+    transaction: Transaction,
 }
 export type JettonMinterAction =
     | JettonMinterMintAction
@@ -74,6 +78,7 @@ export function parseJettonMinterTransaction(tx: Transaction): JettonMinterActio
             forwardPayload: inMessage.forwardPayload,
             forwardTonAmount: inMessage.forwardTonAmount,
             value: tx.inMessage.info.value.coins,
+            transaction: tx,
         };
     }
 
@@ -84,6 +89,7 @@ export function parseJettonMinterTransaction(tx: Transaction): JettonMinterActio
             amount: inMessage.amount,
             from: inMessage.from,
             value: tx.inMessage.info.value.coins,
+            transaction: tx,
         };
     }
 
@@ -93,6 +99,7 @@ export function parseJettonMinterTransaction(tx: Transaction): JettonMinterActio
             queryId: inMessage.queryId,
             newAdmin: inMessage.newAdmin,
             value: tx.inMessage.info.value.coins,
+            transaction: tx,
         };
     }
 
@@ -102,6 +109,7 @@ export function parseJettonMinterTransaction(tx: Transaction): JettonMinterActio
             queryId: inMessage.queryId,
             newContent: inMessage.newContent,
             value: tx.inMessage.info.value.coins,
+            transaction: tx,
         };
     }
 

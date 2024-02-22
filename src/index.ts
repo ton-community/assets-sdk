@@ -8,7 +8,7 @@ export {NoopStorage} from './storage/noop';
 export {TonClientApi, createApi} from './client/ton-client-api';
 
 export {importKey} from './key';
-export {createWallet, createHighloadV2, createSender} from './wallets/wallets';
+export {WalletType, createWallet, createHighloadV2, createSender} from './wallets/wallets';
 export {HighloadWalletContractV2} from './wallets/HighloadWalletContractV2';
 
 export {

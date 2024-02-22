@@ -24,13 +24,12 @@ export async function main() {
         defaultOwner: formatAddress(sender.address, network)
     });
 
-    const masterAt = await client.getLastBlock();
-    const state = await client.getAccountLite(masterAt.last.seqno, address);
+    const account = await client.provider(address).getState();
 
     const walletInfo = {
         address: address,
-        type: state.account.state.type,
-        balance: fromNano(state.account.balance.coins) + ' TON',
+        type: account.state.type,
+        balance: fromNano(account.balance) + ' TON',
     };
     printInfo(walletInfo, network)
 }

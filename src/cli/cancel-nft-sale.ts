@@ -51,7 +51,7 @@ export async function main() {
     if (!confirm) {
         return;
     }
-    await sale.sendCancel(sender, { value: toNano('1') });
+    await sale.sendCancel(sender);
 
     const cancelledSaleInfo = {
         name: 'Cancelled NFT Sale',

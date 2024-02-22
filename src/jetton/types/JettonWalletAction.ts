@@ -12,25 +12,37 @@ export type JettonWalletTransferAction = {
     responseAddress: Address | null;
     forwardTonAmount: bigint;
     forwardPayload: Cell | null;
+    transaction: Transaction;
 }
 export type JettonWalletTransferFailedAction = {
     kind: 'jetton_transfer_failed';
     queryId: bigint;
     amount: bigint;
+    transaction: Transaction;
+}
+export type JettonWalletTransferReceivedAction = {
+    kind: 'jetton_transfer_received';
+    queryId: bigint;
+    amount: bigint;
+    from: Address;
+    transaction: Transaction;
 }
 export type JettonWalletBurnAction = {
     kind: 'jetton_burn';
     queryId: bigint;
     amount: bigint;
+    transaction: Transaction;
 }
 export type JettonWalletBurnFailedAction = {
     kind: 'jetton_burn_failed';
     queryId: bigint;
     amount: bigint;
+    transaction: Transaction;
 }
 export type JettonWalletAction =
     | JettonWalletTransferAction
     | JettonWalletTransferFailedAction
+    | JettonWalletTransferReceivedAction
     | JettonWalletBurnAction
     | JettonWalletBurnFailedAction
     | TransferAction
@@ -54,6 +66,9 @@ export function parseJettonWalletTransaction(tx: Transaction): JettonWalletActio
     if (tx.description.computePhase.type !== 'vm') {
         return {kind: 'unknown', transaction: tx};
     }
+    if (tx.description.computePhase.exitCode !== 0) {
+        return {kind: 'unknown', transaction: tx};
+    }
     if (!tx.inMessage.body) {
         return {kind: 'unknown', transaction: tx};
     }
@@ -71,6 +86,7 @@ export function parseJettonWalletTransaction(tx: Transaction): JettonWalletActio
             responseAddress: inMessage.responseDestination,
             forwardTonAmount: inMessage.forwardAmount,
             forwardPayload: inMessage.forwardPayload,
+            transaction: tx
         };
     }
 
@@ -78,7 +94,18 @@ export function parseJettonWalletTransaction(tx: Transaction): JettonWalletActio
         return {
             kind: 'jetton_transfer_failed',
             queryId: inMessage.queryId,
-            amount: inMessage.amount
+            amount: inMessage.amount,
+            transaction: tx
+        };
+    }
+
+    if (inMessage.kind === 'jetton_internal_transfer') {
+        return {
+            kind: 'jetton_transfer_received',
+            queryId: inMessage.queryId,
+            amount: inMessage.amount,
+            from: tx.inMessage.info.src,
+            transaction: tx
         };
     }
 
@@ -87,6 +114,7 @@ export function parseJettonWalletTransaction(tx: Transaction): JettonWalletActio
             kind: 'jetton_burn',
             queryId: inMessage.queryId,
             amount: inMessage.amount,
+            transaction: tx
         };
     }
 
@@ -95,6 +123,7 @@ export function parseJettonWalletTransaction(tx: Transaction): JettonWalletActio
             kind: 'jetton_burn_failed',
             queryId: inMessage.queryId,
             amount: inMessage.amount,
+            transaction: tx
         };
     }
 

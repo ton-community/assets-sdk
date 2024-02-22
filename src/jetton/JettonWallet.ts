@@ -72,7 +72,7 @@ export class JettonWallet implements Contract {
         const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
 
         await provider.internal(sender, {
-            value: options?.value ?? toNano('0.05'),
+            value: (options?.value ?? toNano('0.05')) + (notification?.amount ?? 0n),
             bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().store(storeJettonTransferMessage({
@@ -95,7 +95,7 @@ export class JettonWallet implements Contract {
         const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
 
         await provider.internal(sender, {
-            value: options?.value ?? toNano('0.02'),
+            value: options?.value ?? toNano('0.05'),
             bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().store(storeJettonBurnMessage({

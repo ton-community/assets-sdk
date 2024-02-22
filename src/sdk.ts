@@ -20,6 +20,7 @@ import {NftRoyaltyParams} from "./nft/types/NftRoyaltyParams";
 import {NftMintItemParams} from "./nft/types/NftBatchMintMessage";
 import {SbtItemParams} from "./nft/types/SbtItemParams";
 import {NftItemParams} from "./nft/types/NftItemParams";
+import {retry} from "./cli/common";
 
 const WORKCHAIN = 0;
 
@@ -221,7 +222,8 @@ export class AssetsSDK {
     }
 
     private async internalOffchainContentToCell(internal: Record<string, string | number | undefined>) {
-        const contentUrl = await this.storage.uploadFile(Buffer.from(JSON.stringify(internal), 'utf-8'));
+        const contents = Buffer.from(JSON.stringify(internal), 'utf-8');
+        const contentUrl = await retry(() => this.storage.uploadFile(contents), { name: 'upload content' });
         return beginCell()
             .storeUint(0x01, 8)
             .storeStringTail(contentUrl)

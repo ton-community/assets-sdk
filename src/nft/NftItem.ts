@@ -51,7 +51,7 @@ export class NftItem implements Contract {
 
     async sendDeploy(provider: ContractProvider, sender: Sender, params: NftItemParams, value?: bigint) {
         await provider.internal(sender, {
-            value: value ?? toNano('0.03'),
+            value: value ?? toNano('0.05'),
             bounce: true,
             body: beginCell().store(storeNftItemParams(params)).endCell(),
         });
@@ -66,7 +66,7 @@ export class NftItem implements Contract {
         const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
 
         await provider.internal(sender, {
-            value: options?.value ?? toNano('0.03'),
+            value: (options?.value ?? toNano('0.05')) + (notification?.amount ?? 0n),
             bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().store(storeNftTransferMessage({

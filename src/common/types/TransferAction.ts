@@ -7,6 +7,7 @@ export type SimpleTransferAction = {
     from: Address,
     to: Address,
     amount: bigint,
+    transaction: Transaction,
 };
 
 export type TextAction = {
@@ -15,6 +16,7 @@ export type TextAction = {
     to: Address,
     amount: bigint,
     text: string,
+    transaction: Transaction,
 };
 
 export type EncryptedAction = {
@@ -23,6 +25,7 @@ export type EncryptedAction = {
     to: Address,
     amount: bigint,
     data: Buffer,
+    transaction: Transaction,
 };
 
 export type TransferAction =
@@ -50,7 +53,8 @@ export function parseTransferTransaction(tx: Transaction): TransferAction {
             kind: 'simple_transfer',
             from: tx.inMessage.info.src,
             to: tx.inMessage.info.dest,
-            amount: tx.inMessage.info.value.coins
+            amount: tx.inMessage.info.value.coins,
+            transaction: tx,
         };
     }
 
@@ -60,7 +64,8 @@ export function parseTransferTransaction(tx: Transaction): TransferAction {
             from: tx.inMessage.info.src,
             to: tx.inMessage.info.dest,
             amount: tx.inMessage.info.value.coins,
-            text: inMessage.text
+            text: inMessage.text,
+            transaction: tx,
         };
     }
 
@@ -70,7 +75,8 @@ export function parseTransferTransaction(tx: Transaction): TransferAction {
             from: tx.inMessage.info.src,
             to: tx.inMessage.info.dest,
             amount: tx.inMessage.info.value.coins,
-            data: inMessage.data
+            data: inMessage.data,
+            transaction: tx,
         };
     }
 

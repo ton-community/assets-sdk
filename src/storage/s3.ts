@@ -17,8 +17,8 @@ export class S3Storage implements Storage {
     private readonly bucket: string;
 
     private readonly s3: Deferred<S3> = defer(async () => {
-        const ctor = await import('@aws-sdk/client-s3').then((m) => m.S3);
-        return new ctor({
+        const s3 = await import('@aws-sdk/client-s3').then((m) => m.S3);
+        return new s3({
             credentials: {
                 accessKeyId: this.accessKeyId,
                 secretAccessKey: this.secretAccessKey,

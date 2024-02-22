@@ -14,8 +14,8 @@ export class PinataStorage implements Storage {
     private readonly secretApiKey: string;
 
     private readonly client: Deferred<PinataClient> = defer(async () => {
-        const ctor = await import('@pinata/sdk').then((m) => m.default);
-        return new ctor(this.apiKey, this.secretApiKey);
+        const pinata = await import('@pinata/sdk').then((m) => m.default);
+        return new pinata(this.apiKey, this.secretApiKey);
     });
 
     private readonly stream: Deferred<Readable, [Buffer]> = defer(async (contents: Buffer) => {
@@ -36,10 +36,11 @@ export class PinataStorage implements Storage {
         const client = await this.client();
         const stream = await this.stream(contents);
 
-        return 'ipfs://' + (await client.pinFileToIPFS(stream, {
+        const result = await client.pinFileToIPFS(stream, {
             pinataMetadata: {
                 name: 'Assets SDK Jetton',
             }
-        })).IpfsHash;
+        });
+        return 'ipfs://' + result.IpfsHash;
     }
 }
