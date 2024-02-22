@@ -1,16 +1,12 @@
-import {Address, beginCell, Cell, contractAddress, ContractProvider, Sender, SendMode, toNano} from "@ton/core";
+import {Address, beginCell, Cell, contractAddress, ContractProvider} from "@ton/core";
 import {NftCollectionBase} from "./NftCollectionBase";
 import {NftItem} from "./NftItem";
 import {ContentResolver} from "../content";
-import {createNftItemParamsValue, NftItemParams, NftRoyaltyParams, storeNftItemParams} from "./NftCollection.data";
 import {PartialBy} from "../utils";
-import {
-    NftBatchMintMessage,
-    NftCollectionData,
-    NftMintItem, storeNftBatchMintMessage,
-    storeNftCollectionData,
-    storeNftMintMessage
-} from "./NftCollectionBase.data";
+import {NftRoyaltyParams} from "./types/NftRoyaltyParams";
+import {NftCollectionData, storeNftCollectionData} from "./types/NftCollectionData";
+import {createNftItemParamsValue, NftItemParams} from "./types/NftItemParams";
+import {NftCollectionAction, parseNftCollectionTransaction} from "./types/NftCollectionAction";
 
 export type NftCollectionConfig = PartialBy<NftCollectionData, 'itemCode' | 'royalty'>;
 
@@ -50,5 +46,25 @@ export class NftCollection extends NftCollectionBase<NftItemParams> {
             denominator: stack.readBigNumber(),
             recipient: stack.readAddress(),
         };
+    }
+
+    async getActions(provider: ContractProvider, options?: { lt?: never, hash?: never, limit?: number } | {
+        lt: bigint,
+        hash: Buffer,
+        limit?: number
+    }): Promise<NftCollectionAction[]> {
+        let {lt, hash, limit} = options ?? {};
+        if (!lt || !hash) {
+            const state = await provider.getState();
+            if (!state.last) {
+                return [];
+            }
+
+            lt = state.last.lt;
+            hash = state.last.hash;
+        }
+
+        const messages = await provider.getTransactions(this.address, lt, hash, limit);
+        return messages.map(tx => parseNftCollectionTransaction(tx));
     }
 }

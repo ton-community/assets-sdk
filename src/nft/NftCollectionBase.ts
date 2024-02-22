@@ -3,17 +3,11 @@ import {NftCollectionData} from "./data";
 import {ContentResolver, loadFullContent} from "../content";
 import {parseNftContent} from "./content";
 import {nftCollectionEditableCode} from './contracts/build/nft-collection-editable';
-import {
-    NftBatchMintMessage,
-    NftChangeAdminMessage,
-    NftChangeContentMessage, NftMintItem, NftMintItemParams,
-    NftMintMessage,
-    storeNftBatchMintMessage,
-    storeNftChangeAdminMessage,
-    storeNftChangeContentMessage,
-    storeNftMintMessage
-} from "./NftCollectionBase.data";
-import {NftItemParams, ParamsValue, storeNftItemParams} from "./NftCollection.data";
+import {NftChangeContentMessage, storeNftChangeContentMessage} from "./types/NftChangeContentMessage";
+import {storeNftMintMessage} from "./types/NftMintMessage";
+import {NftMintItemParams, storeNftBatchMintMessage} from "./types/NftBatchMintMessage";
+import {storeNftChangeAdminMessage} from "./types/NftChangeAdminMessage";
+import {ParamsValue} from "./types/ParamsValue";
 
 export abstract class NftCollectionBase<T> implements Contract {
     static code = Cell.fromBase64(nftCollectionEditableCode.codeBoc);
@@ -39,17 +33,20 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendMint(provider: ContractProvider, sender: Sender, item: NftMintItemParams<T>, value?: bigint, queryId?: bigint) {
+    async sendMint(provider: ContractProvider, sender: Sender, item: NftMintItemParams<T>, options?: {
+        value?: bigint,
+        queryId?: bigint
+    }) {
         if (this.itemParamsValue === undefined) {
             throw new Error('No item params value');
         }
 
         await provider.internal(sender, {
-            value: value ?? toNano('0.05'),
+            value: options?.value ?? toNano('0.05'),
             bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().store(storeNftMintMessage({
-                queryId: queryId ?? 0n,
+                queryId: options?.queryId ?? 0n,
                 itemIndex: item.index,
                 itemParams: item,
                 value: item.value ?? toNano('0.03'),
@@ -57,16 +54,19 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendBatchMint(provider: ContractProvider, sender: Sender, items: NftMintItemParams<T>[], value?: bigint, queryId?: bigint) {
+    async sendBatchMint(provider: ContractProvider, sender: Sender, items: NftMintItemParams<T>[], options?: {
+        value?: bigint,
+        queryId?: bigint
+    }) {
         if (this.itemParamsValue === undefined) {
             throw new Error('No item params value');
         }
 
         await provider.internal(sender, {
-            value: value ?? toNano('0.05') * BigInt(items.length),
+            value: options?.value ?? toNano('0.05') * BigInt(items.length),
             bounce: true,
             body: beginCell().store(storeNftBatchMintMessage({
-                queryId: queryId ?? 0n,
+                queryId: options?.queryId ?? 0n,
                 requests: items.map((item) => ({
                     index: item.index,
                     params: item,
@@ -76,22 +76,32 @@ export abstract class NftCollectionBase<T> implements Contract {
         });
     }
 
-    async sendChangeAdmin(provider: ContractProvider, sender: Sender, newAdmin: Address, value?: bigint, queryId?: bigint) {
+    async sendChangeAdmin(provider: ContractProvider, sender: Sender, newAdmin: Address, options?: {
+        value?: bigint,
+        queryId?: bigint
+    }) {
         await provider.internal(sender, {
-            value: value ?? toNano('0.05'),
+            value: options?.value ?? toNano('0.05'),
             bounce: true,
             body: beginCell().store(storeNftChangeAdminMessage({
                 newAdmin: newAdmin,
-                queryId: queryId ?? 0n,
+                queryId: options?.queryId ?? 0n,
             })).endCell(),
         });
     }
 
-    async sendChangeContent(provider: ContractProvider, sender: Sender, message: NftChangeContentMessage, value?: bigint, queryId?: bigint) {
+    async sendChangeContent(provider: ContractProvider, sender: Sender, message: NftChangeContentMessage, options?: {
+        value?: bigint,
+        queryId?: bigint
+    }) {
         await provider.internal(sender, {
-            value: value ?? toNano('0.05'),
+            value: options?.value ?? toNano('0.05'),
             bounce: true,
-            body: beginCell().store(storeNftChangeContentMessage(message)).endCell(),
+            body: beginCell().store(storeNftChangeContentMessage({
+                queryId: options?.queryId ?? 0n,
+                newContent: message.newContent,
+                newRoyaltyParams: message.newRoyaltyParams,
+            })).endCell(),
         });
     }
 

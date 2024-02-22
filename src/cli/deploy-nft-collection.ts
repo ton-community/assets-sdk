@@ -2,7 +2,8 @@ import {createEnv, formatAddress, printInfo} from "./common";
 import inquirer from 'inquirer';
 import {readFile} from 'fs/promises';
 import {Address} from "@ton/core";
-import {NftRoyaltyParams} from "../nft/NftCollection.data";
+
+import {NftRoyaltyParams} from "../nft/types/NftRoyaltyParams";
 
 type ImageUrl = {
     kind: 'url',

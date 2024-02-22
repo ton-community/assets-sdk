@@ -9,12 +9,13 @@ import {
     StateInit,
     toNano
 } from "@ton/core";
-import {NftItemData} from "./data";
 import {ContentResolver, loadFullContent} from "../content";
 import {NftCollection} from "./NftCollection";
 import {parseNftContent} from "./content";
 import {sbtItemCode} from './contracts/build/sbt-item';
-import {SbtItemParams, storeSbtItemParams} from "./SbtCollection.data";
+import {SbtItemParams, storeSbtItemParams} from "./types/SbtItemParams";
+import {parseSbtItemTransaction, SbtItemAction} from "./types/SbtItemAction";
+import {NftItemData} from "./data";
 
 export type SbtItemConfig = {
     index: bigint;
@@ -79,5 +80,26 @@ export class SbtItem implements Contract {
             content = await collectionContract.getItemContent(index, individualContent);
         }
         return parseNftContent(await loadFullContent(content, this.contentResolver));
+    }
+
+    async getActions(provider: ContractProvider, options?: { lt?: never, hash?: never, limit?: number } | {
+        lt: bigint,
+        hash: Buffer,
+        limit?: number
+    }): Promise<SbtItemAction[]> {
+        let {lt, hash, limit} = options ?? {};
+        if (!lt || !hash) {
+            const state = await provider.getState();
+            if (!state.last) {
+                return [];
+            }
+
+            lt = state.last.lt;
+            hash = state.last.hash;
+        }
+
+        const transactions = await provider.getTransactions(this.address, lt, hash, limit);
+
+        return transactions.map(tx => parseSbtItemTransaction(tx));
     }
 }

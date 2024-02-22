@@ -35,15 +35,18 @@
         "@ton/ton": ">=13.5.1"
     },
     "devDependencies": {
+        "@ton-community/func-js": "0.6.3",
         "@ton/core": "^0.54.0",
         "@ton/crypto": "^3.2.0",
-        "@ton-community/func-js": "0.6.3",
         "@ton/ton": "^13.9.0",
         "@types/inquirer": "^9.0.7",
+        "@types/jest": "^29.5.12",
         "@types/node": "^20.3.2",
         "boxen": "^5.1.2",
         "chalk": "^4.1.2",
+        "jest": "^29.7.0",
         "ton-crypto": "^3.2.0",
+        "ts-jest": "^29.1.2",
         "ts-node": "^10.9.1",
         "typescript": "^5.1.6"
     },

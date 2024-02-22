@@ -34,13 +34,13 @@ export type Deferred<T, P extends unknown[] = []> = (...args: P) => Promise<T>;
 export type DeferredFactory<T, P extends unknown[] = []> = (...args: P) => Promise<T>;
 
 export function defer<T, P extends unknown[] = []>(factory: DeferredFactory<T, P>): Deferred<T, P> {
-  let promise: Promise<T> | null = null;
-  return (...args: P) => {
-      if (!promise) {
-          promise = Promise.resolve(factory(...args));
-      }
-      return promise;
-  };
+    let promise: Promise<T> | null = null;
+    return (...args: P) => {
+        if (!promise) {
+            promise = Promise.resolve(factory(...args));
+        }
+        return promise;
+    };
 }
 
 export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

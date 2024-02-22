@@ -26,14 +26,14 @@ export class S3Storage implements Storage {
         });
     });
 
-    public static create(params: S3StorageParams) {
-        return new S3Storage(params.s3AccessKeyId, params.s3SecretAccessKey, params.s3Bucket);
-    }
-
     constructor(accessKeyId: string, secretAccessKey: string, bucket: string) {
         this.accessKeyId = accessKeyId;
         this.secretAccessKey = secretAccessKey;
         this.bucket = bucket;
+    }
+
+    public static create(params: S3StorageParams) {
+        return new S3Storage(params.s3AccessKeyId, params.s3SecretAccessKey, params.s3Bucket);
     }
 
     async uploadFile(contents: Buffer): Promise<string> {

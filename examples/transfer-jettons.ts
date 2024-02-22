@@ -1,7 +1,5 @@
 import {Address, toNano} from "@ton/core";
-import {AssetsSDK, importKey, PinataStorageParams} from "../src";
-import {createApi} from "../src/client/ton-client-api";
-import {createSender} from "../src/wallets/wallets";
+import {AssetsSDK, createApi, createSender, importKey, PinataStorageParams} from "../src";
 
 async function main() {
     const NETWORK = 'testnet';

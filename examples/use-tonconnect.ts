@@ -1,6 +1,5 @@
 import {Address, beginCell, Sender, SenderArguments, storeStateInit, toNano} from "@ton/core";
-import {AssetsSDK, PinataStorageParams} from "../src";
-import {createApi} from "../src/client/ton-client-api";
+import {AssetsSDK, createApi, PinataStorageParams} from "../src";
 
 /**
  * This is a mock for the TonConnect UI, which is used to send transactions.
@@ -130,7 +129,7 @@ async function main() {
         decimals: 9,
         description: 'Test jetton',
         symbol: 'TEST',
-    }, sender.address, toNano('100'));
+    }, {adminAddress: sender.address, premintAmount: toNano('100')});
 
     console.log('Created jetton with address', jetton.address);
 }

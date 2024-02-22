@@ -1,12 +1,11 @@
 import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {ParamsValue} from "./NftCollection.data";
+import {ParamsValue} from "./ParamsValue";
 
 export type SbtItemParams = {
     owner: Address,
     individualContent: Cell | string,
-    authority?: Address,
+    authority: Address | null,
 };
-
 export type SbtItemParamsValue = ParamsValue<SbtItemParams>;
 
 export function storeSbtItemParams(src: SbtItemParams) {
@@ -24,7 +23,7 @@ export function storeSbtItemParams(src: SbtItemParams) {
 export function loadSbtItemParams(slice: Slice): SbtItemParams {
     const owner = slice.loadAddress();
     const content = slice.loadRef();
-    const authority = slice.loadAddress();
+    const authority = slice.loadMaybeAddress();
 
     return {owner, individualContent: content, authority};
 }

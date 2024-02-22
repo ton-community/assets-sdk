@@ -1,5 +1,5 @@
-import { Cell, Dictionary, DictionaryValue, Slice } from "@ton/core";
-import { sha256_sync } from "@ton/crypto";
+import {Cell, Dictionary, DictionaryValue, Slice} from "@ton/core";
+import {sha256_sync} from "@ton/crypto";
 
 export interface ContentResolver {
     resolve(url: string): Promise<Buffer>;

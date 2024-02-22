@@ -1,6 +1,6 @@
 import {HighloadWalletContractV2} from "./HighloadWalletContractV2";
 import {KeyPair} from "@ton/crypto";
-import {TonClientApi, createApi} from "../client/ton-client-api";
+import {createApi, TonClientApi} from "../client/ton-client-api";
 import {Sender} from "@ton/core";
 
 const WORKCHAIN = 0;

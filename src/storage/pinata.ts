@@ -23,13 +23,13 @@ export class PinataStorage implements Storage {
         return stream.from(contents);
     });
 
-    public static create(params: PinataStorageParams) {
-        return new PinataStorage(params.pinataApiKey, params.pinataSecretKey);
-    }
-
     constructor(apiKey: string, secretApiKey: string) {
         this.apiKey = apiKey;
         this.secretApiKey = secretApiKey;
+    }
+
+    public static create(params: PinataStorageParams) {
+        return new PinataStorage(params.pinataApiKey, params.pinataSecretKey);
     }
 
     async uploadFile(contents: Buffer): Promise<string> {

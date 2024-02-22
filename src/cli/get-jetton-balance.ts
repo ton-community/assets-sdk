@@ -35,7 +35,7 @@ export async function main() {
 
     const jettonWalletInfo = {
         name: 'Jetton Wallet',
-        jetton: jettonWalletData.jetton,
+        jetton: jettonWalletData.jettonMaster,
         'jetton wallet': jettonWallet.address,
         owner: jettonWalletData.owner,
         balance: jettonWalletData.balance,

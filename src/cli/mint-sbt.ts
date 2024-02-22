@@ -113,6 +113,7 @@ export async function main() {
         index: index,
         owner: owner,
         individualContent: contentUrl,
+        authority: null,
     });
 
     const sbtItem = await collection.getItem(index);

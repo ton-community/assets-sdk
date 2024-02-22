@@ -1,7 +1,5 @@
 import {Address} from "@ton/core";
-import {AssetsSDK, importKey, PinataStorageParams} from "../src";
-import {createSender} from "../src/wallets/wallets";
-import {createApi} from "../src/client/ton-client-api";
+import {AssetsSDK, createApi, createSender, importKey, PinataStorageParams} from "../src";
 
 async function main() {
     const NETWORK = 'testnet';
@@ -27,7 +25,7 @@ async function main() {
     const jetton = sdk.openJetton(JETTON_ADDRESS);
 
     const RECEIVER_ADDRESS = Address.parse('RECEIVER_ADDRESS');
-    await jetton.sendMint({to: RECEIVER_ADDRESS, amount: 1200000n});
+    await jetton.sendMint(sender, RECEIVER_ADDRESS, 1200000n);
 }
 
 main().catch(console.error);

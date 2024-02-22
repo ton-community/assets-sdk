@@ -2,20 +2,24 @@ import {
     Address,
     beginCell,
     Cell,
-    Contract, contractAddress,
+    Contract,
+    contractAddress,
     ContractProvider,
     Sender,
-    SendMode, StateInit,
-    toNano, Transaction
+    SendMode,
+    StateInit,
+    toNano
 } from "@ton/core";
-import {NftItemData} from "./data";
 import {ContentResolver, loadFullContent} from "../content";
-import {NftCollection, } from './NftCollection';
-import {NftItemParams, NftRoyaltyParams, storeNftItemParams} from "./NftCollection.data";
+import {NftCollection,} from './NftCollection';
 import {parseNftContent} from "./content";
 import {nftItemCode} from './contracts/build/nft-item';
-import {loadNftMessage, NftMessage, storeNftTransferMessage} from "./NftItem.tlb";
 import {parseExcessReturnOptions, parseNotifyOptions, SendTransferOptions} from "../common/types";
+import {NftRoyaltyParams} from "./types/NftRoyaltyParams";
+import {NftItemParams, storeNftItemParams} from "./types/NftItemParams";
+import {storeNftTransferMessage} from "./types/NftTransferMessage";
+import {NftItemAction, parseNftItemTransaction} from "./types/NftItemAction";
+import {NftItemData} from "./data";
 
 export type NftItemConfig = {
     index: bigint;
@@ -53,19 +57,23 @@ export class NftItem implements Contract {
         });
     }
 
-    async send(provider: ContractProvider, sender: Sender, newOwner: Address, options?: SendTransferOptions, value?: bigint, queryId?: bigint) {
+    async send(provider: ContractProvider, sender: Sender, newOwner: Address, options?: SendTransferOptions & {
+        customPayload?: Cell,
+        value?: bigint,
+        queryId?: bigint
+    }) {
         const notification = parseNotifyOptions(options?.notify);
         const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
 
         await provider.internal(sender, {
-            value: value ?? toNano('0.03'),
+            value: options?.value ?? toNano('0.03'),
             bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().store(storeNftTransferMessage({
-                queryId: queryId ?? 0n,
+                queryId: options?.queryId ?? 0n,
                 newOwner: newOwner,
                 responseDestination: excessReturn?.address ?? null,
-                customPayload: null,
+                customPayload: options?.customPayload ?? null,
                 forwardAmount: notification?.amount ?? 0n,
                 forwardPayload: notification?.payload ?? null,
             })).endCell()
@@ -121,62 +129,24 @@ export class NftItem implements Contract {
         };
     }
 
-    async getMessages(provider: ContractProvider): Promise<ParsedTransaction<NftMessage>[]>;
-    async getMessages(provider: ContractProvider, lt?: undefined | null, hash?: undefined | null): Promise<ParsedTransaction<NftMessage>[]>;
-    async getMessages(provider: ContractProvider, lt: bigint, hash: Buffer): Promise<ParsedTransaction<NftMessage>[]>;
-    async getMessages(provider: ContractProvider, lt?: bigint | null, hash?: Buffer | null): Promise<ParsedTransaction<NftMessage>[]> {
-        if (lt === undefined || lt === null || hash === undefined || hash === null) {
+    async getActions(provider: ContractProvider, options?: { lt?: never, hash?: never, limit?: number } | {
+        lt: bigint,
+        hash: Buffer,
+        limit?: number
+    }): Promise<NftItemAction[]> {
+        let {lt, hash, limit} = options ?? {};
+        if (!lt || !hash) {
             const state = await provider.getState();
             if (!state.last) {
                 return [];
             }
 
-            lt ??= state.last.lt;
-            hash ??= state.last.hash;
+            lt = state.last.lt;
+            hash = state.last.hash;
         }
 
-        const transactions = await provider.getTransactions(this.address, lt, hash);
+        const transactions = await provider.getTransactions(this.address, lt, hash, limit);
 
-        const parsed: ParsedTransaction<NftMessage>[] = [];
-        for (const tx of transactions) {
-            if (tx.description.type !== 'generic') {
-                parsed.push({inMessage: null, outMessages: [], transaction: tx});
-                continue;
-            }
-            if (!tx.inMessage) {
-                parsed.push({inMessage: null, outMessages: [], transaction: tx});
-                continue;
-            }
-            if (tx.inMessage.info.type !== 'internal') {
-                parsed.push({inMessage: null, outMessages: [], transaction: tx});
-                continue;
-            }
-            if (tx.description.computePhase.type !== 'vm') {
-                parsed.push({inMessage: null, outMessages: [], transaction: tx});
-                continue;
-            }
-            if (tx.description.computePhase.exitCode !== 0) {
-                parsed.push({inMessage: null, outMessages: [], transaction: tx});
-                continue;
-            }
-
-            const inMessage = loadNftMessage(tx.inMessage.body.beginParse());
-
-            const outMessages: NftMessage[] = [];
-            for (const outMessage of tx.outMessages.values()) {
-                const message = loadNftMessage(outMessage.body.beginParse());
-                outMessages.push(message);
-            }
-
-            parsed.push({inMessage, outMessages, transaction: tx});
-        }
-
-        return parsed;
+        return transactions.map(tx => parseNftItemTransaction(tx));
     }
 }
-
-export type ParsedTransaction<T> = {
-    inMessage: T | null;
-    outMessages: T[];
-    transaction: Transaction;
-};

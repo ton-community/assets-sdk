@@ -1,10 +1,9 @@
-import {Address, beginCell, Sender, toNano} from "@ton/core";
+import {Address, beginCell, Sender} from "@ton/core";
 import {Storage} from "./storage/storage";
 import {PinataStorage, PinataStorageParams} from "./storage/pinata";
 import {S3Storage, S3StorageParams} from "./storage/s3";
 import {TonClientApi} from "./client/ton-client-api";
 import {JettonContent, jettonContentToInternal} from "./jetton/content";
-import {JettonParams} from "./jetton/data";
 import {NftContent, nftContentToInternal} from "./nft/content";
 import {internalOnchainContentToCell} from "./utils";
 import {JettonWallet} from "./jetton/JettonWallet";
@@ -15,22 +14,40 @@ import {SbtCollection} from "./nft/SbtCollection";
 import {NftSaleParams} from "./nft/data";
 import {ContentResolver, DefaultContentResolver} from "./content";
 import {NftSale} from "./nft/NftSale";
-import { NoopStorage } from "./storage/noop";
-import {NftItemParams, NftItemParamsValue, NftRoyaltyParams} from "./nft/NftCollection.data";
-import {NftMintItemParams, NftMintMessage} from "./nft/NftCollectionBase.data";
-import {SbtItemParams} from "./nft/SbtCollection.data";
+import {NoopStorage} from "./storage/noop";
 import {SendTransferOptions} from "./common/types";
+import {NftRoyaltyParams} from "./nft/types/NftRoyaltyParams";
+import {NftMintItemParams} from "./nft/types/NftBatchMintMessage";
+import {SbtItemParams} from "./nft/types/SbtItemParams";
+import {NftItemParams} from "./nft/types/NftItemParams";
 
 const WORKCHAIN = 0;
 
+type DeployJettonOptions = {
+    onchainContent?: boolean;
+    adminAddress?: Address,
+    premintAmount?: bigint,
+    premintOptions?: SendTransferOptions,
+    value?: bigint,
+    queryId?: bigint
+};
+
 export class AssetsSDK {
+    constructor(
+        public readonly storage: Storage,
+        public readonly api: TonClientApi,
+        public readonly sender?: Sender,
+        public readonly contentResolver?: ContentResolver
+    ) {
+    }
+
     static create(params: {
         api: TonClientApi,
         storage?: PinataStorageParams | S3StorageParams | Storage,
         sender?: Sender,
         contentResolver?: ContentResolver,
     }) {
-        let { api, storage, sender: sender, contentResolver } = params;
+        let {api, storage, sender: sender, contentResolver} = params;
 
         if (!storage) {
             storage = new NoopStorage();
@@ -45,33 +62,35 @@ export class AssetsSDK {
         return new AssetsSDK(storage, api, sender, contentResolver);
     }
 
-    constructor(
-        public readonly storage: Storage,
-        public readonly api: TonClientApi,
-        public readonly sender?: Sender,
-        public readonly contentResolver?: ContentResolver
-    ) {}
-
-    async deployJetton(content: JettonContent, adminAddress?: Address, premintAmount?: bigint, premintOptions?: SendTransferOptions, value?: bigint, queryId?: bigint) {
+    async deployJetton(
+        content: JettonContent,
+        options?: DeployJettonOptions
+    ) {
         if (!this.sender) {
             throw new Error('Sender must be defined');
         }
 
-        adminAddress ??= this.sender?.address;
+        const adminAddress = options?.adminAddress ?? this.sender?.address;
         if (adminAddress === undefined) {
             throw new Error('Admin address must be defined in options or be available in Sender');
         }
 
         const jettonMinterContract = JettonMinter.createFromConfig({
             admin: adminAddress,
-            content: await this.contentToCell(jettonContentToInternal(content), content?.onchainContent ?? false),
+            content: await this.contentToCell(jettonContentToInternal(content), options?.onchainContent ?? false),
         }, JettonMinter.code, WORKCHAIN, this.contentResolver);
         const jetton = this.api.open(jettonMinterContract);
 
+        const premintAmount = options?.premintAmount;
+
         if (typeof premintAmount === 'bigint' && premintAmount > 0n) {
-            await jetton.sendDeploy(this.sender, value);
+            await jetton.sendMint(this.sender, adminAddress, premintAmount, {
+                ...options?.premintOptions,
+                value: options?.value,
+                queryId: options?.queryId
+            });
         } else {
-            await jetton.sendMint(this.sender, adminAddress, premintAmount, premintOptions, value, queryId);
+            await jetton.sendDeploy(this.sender, options?.value);
         }
         return jetton;
     }
@@ -80,10 +99,14 @@ export class AssetsSDK {
         return this.api.open(JettonMinter.createFromAddress(address, this.contentResolver));
     }
 
-    async deployNftCollection(content: { collectionContent: NftContent, commonContent: string, onchainContent?: boolean }, options?: {
+    async deployNftCollection(content: { collectionContent: NftContent, commonContent: string, }, options?: {
         royaltyParams?: NftRoyaltyParams,
         adminAddress?: Address
-    }, premintItems?: NftMintItemParams<NftItemParams>[], value?: bigint, queryId?: bigint) {
+        onchainContent?: boolean,
+        premintItems?: NftMintItemParams<NftItemParams>[],
+        value?: bigint,
+        queryId?: bigint
+    }) {
         if (!this.sender) {
             throw new Error('Sender must be defined');
         }
@@ -96,16 +119,19 @@ export class AssetsSDK {
         const collection = this.api.open(NftCollection.createFromConfig({
             admin: adminAddress,
             content: beginCell()
-                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), content?.onchainContent ?? false))
+                .storeRef(await this.contentToCell(nftContentToInternal(content.collectionContent), options?.onchainContent ?? false))
                 .storeRef(beginCell().storeStringTail(content.commonContent))
                 .endCell(),
             royalty: options?.royaltyParams,
         }, NftCollection.code, WORKCHAIN, this.contentResolver));
 
-        if (typeof premintItems?.length === 'number' && premintItems.length > 0) {
-            await collection.sendBatchMint(this.sender, premintItems, value, queryId);
+        if (typeof options?.premintItems?.length === 'number' && options?.premintItems.length > 0) {
+            await collection.sendBatchMint(this.sender, options?.premintItems, {
+                value: options?.value,
+                queryId: options?.queryId
+            });
         } else {
-            await collection.sendDeploy(this.sender, value);
+            await collection.sendDeploy(this.sender, options?.value);
         }
 
         return collection;
@@ -115,12 +141,21 @@ export class AssetsSDK {
         return this.api.open(NftCollection.createFromAddress(address, this.contentResolver));
     }
 
-    async deploySbtCollection(content: { collectionContent: NftContent, commonContent: string, onchainContent?: boolean }, adminAddress?: Address, premintItems?: NftMintItemParams<SbtItemParams>[], value?: bigint, queryId?: bigint) {
+    async deploySbtCollection(content: {
+        collectionContent: NftContent,
+        commonContent: string,
+        onchainContent?: boolean
+    }, options?: {
+        adminAddress?: Address,
+        premintItems?: NftMintItemParams<SbtItemParams>[],
+        value?: bigint,
+        queryId?: bigint
+    }) {
         if (!this.sender) {
             throw new Error('Sender must be defined');
         }
 
-        adminAddress ??= this.sender?.address;
+        const adminAddress = options?.adminAddress ?? this.sender?.address;
         if (adminAddress === undefined) {
             throw new Error('Admin address must be defined in options or be available in Sender');
         }
@@ -133,10 +168,13 @@ export class AssetsSDK {
                 .endCell(),
         }, SbtCollection.code, WORKCHAIN, this.contentResolver));
 
-        if (typeof premintItems?.length === 'number' && premintItems.length > 0) {
-            await collection.sendBatchMint(this.sender, premintItems, value, queryId);
+        if (typeof options?.premintItems?.length === 'number' && options?.premintItems.length > 0) {
+            await collection.sendBatchMint(this.sender, options?.premintItems, {
+                value: options?.value,
+                queryId: options?.queryId
+            });
         } else {
-            await collection.sendDeploy(this.sender, value);
+            await collection.sendDeploy(this.sender, options?.value);
         }
 
         return collection;
@@ -174,7 +212,7 @@ export class AssetsSDK {
             royalty: params.royalty ?? 0n,
             canDeployByExternal: params.canDeployByExternal ?? true,
         }));
-        await sale.sendTopup(this.sender, params.value, params.queryId);
+        await sale.sendTopup(this.sender, {value: params.value, queryId: params.queryId});
         return sale;
     }
 

@@ -137,7 +137,7 @@ export async function main() {
     const saleData = await sale.getData();
     await verifySale(saleData, saleParams);
 
-    await nft.send(sender, sale.address, { notify: true, returnExcess: true }, toNano('0.05'));
+    await nft.send(sender, sale.address, { notify: true, returnExcess: true,  value: toNano('0.05') });
     const {nftOwner: seller} = await sale.getData();
 
     const saleInfo = {
