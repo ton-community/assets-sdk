@@ -9,7 +9,9 @@
     "browser": {
         "@aws-sdk/client-s3": false,
         "@pinata/sdk": false,
-        "stream": false
+        "stream": false,
+        "boxen": false,
+        "chalk": false
     },
     "scripts": {
         "build": "npm run compile && tsc",
