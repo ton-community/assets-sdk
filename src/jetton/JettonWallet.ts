@@ -16,13 +16,7 @@ import {PartialBy} from "../utils";
 import {storeJettonTransferMessage} from "./types/JettonTransferMessage";
 import {storeJettonBurnMessage} from "./types/JettonBurnMessage";
 import {JettonWalletAction, parseJettonWalletTransaction} from "./types/JettonWalletAction";
-
-export type JettonWalletData = {
-    balance: bigint;
-    owner: Address;
-    jettonMaster: Address;
-    jettonWalletCode: Cell;
-}
+import {JettonWalletData} from "./types/JettonWalletData";
 
 export function jettonWalletConfigToCell(config: JettonWalletData): Cell {
     return beginCell()

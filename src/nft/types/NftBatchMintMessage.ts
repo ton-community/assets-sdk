@@ -1,6 +1,6 @@
 import {beginCell, Builder, Dictionary, DictionaryValue, Slice, toNano} from "@ton/core";
 import {NFT_BATCH_MINT_OPCODE} from "../opcodes";
-import {LoadParams, StoreParams} from "./ParamsValue";
+import {LoadParams, StoreParams} from "../../common/types/ParamsValue";
 
 export type NftBatchMintMessage<T> = {
     queryId: bigint,

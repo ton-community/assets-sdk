@@ -1,5 +1,5 @@
 import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {ParamsValue} from "./ParamsValue";
+import {ParamsValue} from "../../common/types/ParamsValue";
 
 export type SbtItemParams = {
     owner: Address,

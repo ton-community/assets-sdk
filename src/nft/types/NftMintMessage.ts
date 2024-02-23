@@ -1,6 +1,6 @@
 import {beginCell, Builder, Slice} from "@ton/core";
 import {NFT_MINT_OPCODE} from "../opcodes";
-import {LoadParams, StoreParams} from "./ParamsValue";
+import {LoadParams, StoreParams} from "../../common/types/ParamsValue";
 
 export type NftMintMessage<T> = {
     itemIndex: bigint,

@@ -7,7 +7,7 @@ import {NftChangeContentMessage, storeNftChangeContentMessage} from "./types/Nft
 import {storeNftMintMessage} from "./types/NftMintMessage";
 import {NftMintItemParams, storeNftBatchMintMessage} from "./types/NftBatchMintMessage";
 import {storeNftChangeAdminMessage} from "./types/NftChangeAdminMessage";
-import {ParamsValue} from "./types/ParamsValue";
+import {ParamsValue} from "../common/types/ParamsValue";
 
 export abstract class NftCollectionBase<T> implements Contract {
     static code = Cell.fromBase64(nftCollectionEditableCode.codeBoc);

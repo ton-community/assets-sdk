@@ -1,5 +1,5 @@
 import {Slice} from "@ton/core";
-import {ParamsValue} from "./ParamsValue";
+import {ParamsValue} from "../../common/types/ParamsValue";
 import {NFT_BATCH_MINT_OPCODE, NFT_CHANGE_ADMIN_OPCODE, NFT_CHANGE_CONTENT_OPCODE, NFT_MINT_OPCODE} from "../opcodes";
 import {loadNftMintMessage, NftMintMessage} from "./NftMintMessage";
 import {loadNftBatchMintMessage, NftBatchMintMessage} from "./NftBatchMintMessage";

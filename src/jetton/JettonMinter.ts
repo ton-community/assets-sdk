@@ -25,7 +25,7 @@ import {JettonMinterData} from "./types/JettonMinterData";
 
 export type JettonMinterConfig = PartialBy<JettonMinterContent, 'jettonWalletCode'>;
 
-function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
+export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
     return beginCell().store(storeJettonMinterContent({
         admin: config.admin,
         content: config.content,
