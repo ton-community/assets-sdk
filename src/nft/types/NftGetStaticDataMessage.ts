@@ -1,6 +1,7 @@
 import {Builder, Slice} from "@ton/core";
 import {NFT_GET_STATIC_DATA_OPCODE} from "../opcodes";
 
+// get_static_data#2fcb26a2 query_id:uint64 = InternalMsgBody;
 export type NftGetStaticDataMessage = {
     queryId: bigint;
 };

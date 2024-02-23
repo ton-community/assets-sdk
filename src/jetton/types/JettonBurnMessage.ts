@@ -1,6 +1,9 @@
 import {Address, Builder, Cell, Slice} from "@ton/core";
 import {JETTON_BURN_OPCODE} from "../opcodes";
 
+// burn#595f07bc query_id:uint64 amount:(VarUInteger 16)
+//               response_destination:MsgAddress custom_payload:(Maybe ^Cell)
+//               = InternalMsgBody;
 export type JettonBurnMessage = {
     queryId: bigint;
     amount: bigint;

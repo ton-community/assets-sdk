@@ -1,6 +1,7 @@
 import {Address, Builder, Slice} from "@ton/core";
 import {NFT_REPORT_STATIC_DATA_OPCODE} from "../opcodes";
 
+// report_static_data#8b771735 query_id:uint64 index:uint256 collection:MsgAddress = InternalMsgBody;
 export type NftReportStaticDataMessage = {
     queryId: bigint;
     index: bigint;

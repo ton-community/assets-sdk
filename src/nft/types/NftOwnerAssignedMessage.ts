@@ -1,10 +1,11 @@
 import {Address, Builder, Cell, Slice} from "@ton/core";
 import {NFT_OWNER_ASSIGNED_OPCODE} from "../opcodes";
 
+// ownership_assigned query_id:uint64 prev_owner:MsgAddress forward_payload:(Either Cell ^Cell) = InternalMsgBody;
 export type NftOwnerAssignedMessage = {
     queryId: bigint;
     previousOwner: Address;
-    payload: Cell;
+    payload: Cell | null;
 };
 
 export function storeNftOwnerAssignedMessage(message: NftOwnerAssignedMessage): (builder: Builder) => void {
@@ -13,7 +14,7 @@ export function storeNftOwnerAssignedMessage(message: NftOwnerAssignedMessage): 
         builder.storeUint(NFT_OWNER_ASSIGNED_OPCODE, 32)
             .storeUint(queryId, 64)
             .storeAddress(previousOwner)
-            .storeRef(payload);
+            .storeMaybeRef(payload);
     };
 }
 
@@ -23,7 +24,8 @@ export function loadNftOwnerAssignedMessage(slice: Slice): NftOwnerAssignedMessa
     }
     const queryId = slice.loadUintBig(64);
     const previousOwner = slice.loadAddress();
-    const payload = slice.loadRef();
+    const eitherPayload = slice.loadBoolean();
+    const payload = eitherPayload ? slice.loadRef() : slice.asCell();
     return {
         queryId,
         previousOwner,

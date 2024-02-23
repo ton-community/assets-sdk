@@ -81,7 +81,7 @@ export function parseJettonWalletTransaction(tx: Transaction): JettonWalletActio
             kind: 'jetton_transfer',
             queryId: inMessage.queryId,
             from: tx.inMessage.info.src,
-            to: inMessage.to,
+            to: inMessage.destination,
             amount: inMessage.amount,
             responseAddress: inMessage.responseDestination,
             forwardTonAmount: inMessage.forwardAmount,

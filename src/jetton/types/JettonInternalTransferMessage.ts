@@ -1,6 +1,11 @@
-import {Address, Builder, Cell, Slice} from "@ton/core";
+import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
 import {JETTON_INTERNAL_TRANSFER_OPCODE} from "../opcodes";
 
+// internal_transfer  query_id:uint64 amount:(VarUInteger 16) from:MsgAddress
+//                      response_address:MsgAddress
+//                      forward_ton_amount:(VarUInteger 16)
+//                      forward_payload:(Either Cell ^Cell)
+//                      = InternalMsgBody;
 export type JettonInternalTransferMessage = {
     queryId: bigint,
     amount: bigint,
@@ -32,7 +37,8 @@ export function loadJettonInternalTransferMessage(slice: Slice): JettonInternalT
     const from = slice.loadAddress();
     const responseAddress = slice.loadAddress();
     const forwardTonAmount = slice.loadCoins();
-    const forwardPayload = slice.loadMaybeRef();
+    const eitherPayload = slice.loadBoolean();
+    const forwardPayload = eitherPayload ? slice.loadRef() : slice.asCell();
 
     return {
         queryId,

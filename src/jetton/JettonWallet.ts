@@ -78,7 +78,7 @@ export class JettonWallet implements Contract {
             body: beginCell().store(storeJettonTransferMessage({
                 queryId: options?.queryId ?? 0n,
                 amount: amount,
-                to: recipient,
+                destination: recipient,
                 responseDestination: excessReturn?.address ?? null,
                 customPayload: options?.customPayload ?? null,
                 forwardAmount: notification?.amount ?? 0n,

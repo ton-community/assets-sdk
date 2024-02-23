@@ -1,10 +1,14 @@
 import {Address, Builder, Cell, Slice} from "@ton/core";
 import {JETTON_TRANSFER_OPCODE} from "../opcodes";
 
+// transfer#0f8a7ea5 query_id:uint64 amount:(VarUInteger 16) destination:MsgAddress
+//                  response_destination:MsgAddress custom_payload:(Maybe ^Cell)
+//                  forward_ton_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)
+//                  = InternalMsgBody;
 export interface JettonTransferMessage {
     queryId: bigint;
     amount: bigint;
-    to: Address;
+    destination: Address;
     responseDestination: Address | null;
     customPayload: Cell | null;
     forwardAmount: bigint;
@@ -16,7 +20,7 @@ export function storeJettonTransferMessage(src: JettonTransferMessage) {
         builder.storeUint(JETTON_TRANSFER_OPCODE, 32);
         builder.storeUint(src.queryId, 64);
         builder.storeCoins(src.amount);
-        builder.storeAddress(src.to);
+        builder.storeAddress(src.destination);
         builder.storeAddress(src.responseDestination);
         builder.storeMaybeRef(src.customPayload);
         builder.storeCoins(src.forwardAmount ?? 0);
@@ -35,12 +39,13 @@ export function loadJettonTransferMessage(slice: Slice): JettonTransferMessage {
     const responseDestination = slice.loadMaybeAddress();
     const customPayload = slice.loadMaybeRef();
     const forwardAmount = slice.loadCoins();
-    const forwardPayloadIsRight = slice.loadBoolean();
-    const forwardPayload = forwardPayloadIsRight ? slice.loadRef() : slice.asCell();
+    const eitherPayload = slice.loadBoolean();
+    const forwardPayload = eitherPayload ? slice.loadRef() : slice.asCell();
+
     return {
         queryId,
         amount,
-        to,
+        destination: to,
         responseDestination,
         customPayload,
         forwardAmount,
