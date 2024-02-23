@@ -30,7 +30,7 @@ const sender = await createSender('highload-v2', keyPair, api);
 
 // define the storage parameters (in this case, Pinata)
 const storage: PinataStorageParams = {
-    pinataApiKey: process.env.PINATA_API!,
+    pinataApiKey: process.env.PINATA_API_KEY!,
     pinataSecretKey: process.env.PINATA_SECRET!,
 }
 
