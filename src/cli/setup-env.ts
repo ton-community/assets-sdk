@@ -1,7 +1,8 @@
 import inquirer from 'inquirer';
 import {mnemonicNew} from '@ton/crypto';
 import {writeFile} from 'fs/promises';
-import {createWallet, printAddress, WalletType} from './common';
+import {WalletType, createWallet} from '../';
+import {printAddress} from './common';
 import {importKey} from "../key";
 
 type S3Storage = {

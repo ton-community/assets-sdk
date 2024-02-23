@@ -1,92 +1,81 @@
 import {
     Address,
     beginCell,
-    Builder,
     Cell,
     Contract,
+    contractAddress,
     ContractProvider,
     Sender,
     SendMode,
-    Slice,
+    StateInit,
     toNano
 } from "@ton/core";
-import {NoSenderError} from "../error";
-import {NftItemData} from "./data";
 import {ContentResolver, loadFullContent} from "../content";
-import {ExtendedContractProvider} from "../client/ExtendedContractProvider";
-import {NftCollection, NftRoyaltyParams} from "./NftCollection";
+import {NftCollection,} from './NftCollection';
 import {parseNftContent} from "./content";
 import {nftItemCode} from './contracts/build/nft-item';
+import {parseExcessReturnOptions, parseNotifyOptions, SendTransferOptions} from "../common/types";
+import {NftRoyaltyParams} from "./types/NftRoyaltyParams";
+import {NftItemParams, storeNftItemParams} from "./types/NftItemParams";
+import {storeNftTransferMessage} from "./types/NftTransferMessage";
+import {NftItemAction, parseNftItemTransaction} from "./types/NftItemAction";
+import {NftItemData} from "./data";
 
-export type NftTransferMessage = {
-    queryId?: bigint | null;
-    newOwner: Address;
-    responseDestination?: Address | null;
-    customPayload?: Cell | null;
-    forwardAmount?: bigint | null;
-    forwardPayload?: Cell | null;
+export type NftItemConfig = {
+    index: bigint;
+    collection: Address;
 };
 
-export function storeNftTransferMessage(message: NftTransferMessage): (builder: Builder) => void {
-    return (builder) => {
-        const {queryId, newOwner, responseDestination, customPayload, forwardAmount, forwardPayload} = message;
-        const OPCODE_TRANSFER = 0x5fcc3d14;
-        builder.storeUint(OPCODE_TRANSFER, 32)
-            .storeUint(queryId ?? 0, 64)
-            .storeAddress(newOwner)
-            .storeAddress(responseDestination)
-            .storeMaybeRef(customPayload)
-            .storeCoins(forwardAmount ?? 0)
-            .storeMaybeRef(forwardPayload);
-    };
-}
-
-export function loadNftTransferMessage(slice: Slice): NftTransferMessage {
-    const OPCODE_TRANSFER = 0x5fcc3d14;
-    if (slice.loadUint(32) !== OPCODE_TRANSFER) {
-        throw new Error('Wrong opcode');
-    }
-    const queryId = slice.loadUintBig(64);
-    const newOwner = slice.loadAddress();
-    const responseDestination = slice.loadMaybeAddress();
-    const customPayload = slice.loadMaybeRef();
-    const forwardAmount = slice.loadCoins();
-    const forwardPayload = slice.loadMaybeRef();
-    return {
-        queryId,
-        newOwner,
-        responseDestination,
-        customPayload,
-        forwardAmount,
-        forwardPayload,
-    };
+export function nftItemConfigToCell(config: NftItemConfig): Cell {
+    return beginCell()
+        .storeUint(config.index, 64)
+        .storeAddress(config.collection)
+        .endCell();
 }
 
 export class NftItem implements Contract {
     static nftCode = Cell.fromBase64(nftItemCode.codeBoc);
 
-    constructor(public readonly address: Address, public sender?: Sender, public contentResolver?: ContentResolver) {
+    constructor(public readonly address: Address, public readonly init?: StateInit, public contentResolver?: ContentResolver) {
     }
 
-    async sendTransfer(provider: ContractProvider, message: NftTransferMessage, args?: {
-        value?: bigint,
-        bounce?: boolean
-    }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
+    static createFromConfig(config: NftItemConfig, code?: Cell, workchain?: number, contentResolver?: ContentResolver) {
+        const data = nftItemConfigToCell(config);
+        const init = {data, code: code ?? NftItem.nftCode};
+        return new NftItem(contractAddress(workchain ?? 0, init), init, contentResolver);
+    }
 
-        await provider.internal(this.sender, {
-            value: args?.value ?? toNano('0.03'),
-            bounce: args?.bounce ?? true,
+    static createFromAddress(address: Address, contentResolver?: ContentResolver) {
+        return new NftItem(address, undefined, contentResolver);
+    }
+
+    async sendDeploy(provider: ContractProvider, sender: Sender, params: NftItemParams, value?: bigint) {
+        await provider.internal(sender, {
+            value: value ?? toNano('0.05'),
+            bounce: true,
+            body: beginCell().store(storeNftItemParams(params)).endCell(),
+        });
+    }
+
+    async send(provider: ContractProvider, sender: Sender, newOwner: Address, options?: SendTransferOptions & {
+        customPayload?: Cell,
+        value?: bigint,
+        queryId?: bigint
+    }) {
+        const notification = parseNotifyOptions(options?.notify);
+        const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
+
+        await provider.internal(sender, {
+            value: (options?.value ?? toNano('0.05')) + (notification?.amount ?? 0n),
+            bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().store(storeNftTransferMessage({
-                queryId: message.queryId,
-                newOwner: message.newOwner,
-                responseDestination: message.responseDestination ?? this.sender.address,
-                customPayload: message.customPayload,
-                forwardAmount: message.forwardAmount,
-                forwardPayload: message.forwardPayload,
+                queryId: options?.queryId ?? 0n,
+                newOwner: newOwner,
+                responseDestination: excessReturn?.address ?? null,
+                customPayload: options?.customPayload ?? null,
+                forwardAmount: notification?.amount ?? 0n,
+                forwardPayload: notification?.payload ?? null,
             })).endCell()
         });
     }
@@ -102,7 +91,7 @@ export class NftItem implements Contract {
         };
     }
 
-    async getContent(provider: ExtendedContractProvider) {
+    async getContent(provider: ContractProvider) {
         if (this.contentResolver === undefined) {
             throw new Error('No content resolver');
         }
@@ -114,20 +103,20 @@ export class NftItem implements Contract {
         if (collection === null) {
             content = individualContent;
         } else {
-            const collectionContract = provider.reopen(NftCollection.open(collection, this.sender, this.contentResolver));
+            const collectionContract = provider.open(NftCollection.createFromAddress(collection, this.contentResolver));
             content = await collectionContract.getItemContent(index, individualContent);
         }
         return parseNftContent(await loadFullContent(content, this.contentResolver));
     }
 
-    async getRoyaltyParams(provider: ExtendedContractProvider): Promise<NftRoyaltyParams> {
+    async getRoyaltyParams(provider: ContractProvider): Promise<NftRoyaltyParams> {
         const {collection} = await this.getData(provider);
         if (collection === null) {
             // it's means that royalty stored in nft item
             return this.getNftItemRoyaltyParams(provider);
         }
 
-        const collectionContract = provider.reopen(NftCollection.open(collection, this.sender, this.contentResolver));
+        const collectionContract = provider.open(NftCollection.createFromAddress(collection, this.contentResolver));
         return collectionContract.getRoyaltyParams();
     }
 
@@ -138,5 +127,26 @@ export class NftItem implements Contract {
             denominator: stack.readBigNumber(),
             recipient: stack.readAddress(),
         };
+    }
+
+    async getActions(provider: ContractProvider, options?: { lt?: never, hash?: never, limit?: number } | {
+        lt: bigint,
+        hash: Buffer,
+        limit?: number
+    }): Promise<NftItemAction[]> {
+        let {lt, hash, limit} = options ?? {};
+        if (!lt || !hash) {
+            const state = await provider.getState();
+            if (!state.last) {
+                return [];
+            }
+
+            lt = state.last.lt;
+            hash = state.last.hash;
+        }
+
+        const transactions = await provider.getTransactions(this.address, lt, hash, limit);
+
+        return transactions.map(tx => parseNftItemTransaction(tx));
     }
 }

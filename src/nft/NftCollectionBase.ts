@@ -1,308 +1,113 @@
-import {
-    Address,
-    beginCell,
-    Builder,
-    Cell,
-    Contract,
-    ContractProvider,
-    Dictionary,
-    DictionaryValue,
-    Sender,
-    SendMode,
-    Slice,
-    toNano
-} from "@ton/core";
-import {NoSenderError} from "../error";
+import {Address, beginCell, Cell, Contract, ContractProvider, Sender, SendMode, StateInit, toNano} from "@ton/core";
 import {NftCollectionData} from "./data";
 import {ContentResolver, loadFullContent} from "../content";
 import {parseNftContent} from "./content";
 import {nftCollectionEditableCode} from './contracts/build/nft-collection-editable';
-
-export type NftMintMessage<T> = {
-    itemIndex: bigint,
-    value?: bigint,
-    itemParams: T,
-    queryId?: bigint,
-}
-
-export function storeNftMintMessage<T>(src: NftMintMessage<T>, storeParams: (params: T) => (builder: Builder) => void): (builder: Builder) => void {
-    return (builder: Builder) => {
-        const mintOpcode = 1;
-
-        builder.storeUint(mintOpcode, 32);
-        builder.storeUint(src.queryId ?? 0, 64);
-        builder.storeUint(src.itemIndex, 64);
-        builder.storeCoins(src.value ?? toNano('0.03'));
-        builder.storeRef(beginCell().store(storeParams(src.itemParams)).endCell());
-    };
-}
-
-export function loadNftMintMessage<T>(slice: Slice, loadParams: (slice: Slice) => T): NftMintMessage<T> {
-    const mintOpcode = 1;
-    if (slice.loadUint(32) !== mintOpcode) {
-        throw new Error('Wrong opcode');
-    }
-
-    const queryId = slice.loadUintBig(64);
-    const itemIndex = slice.loadUintBig(64);
-    const value = slice.loadCoins();
-    const itemParams = slice.loadRef();
-    return {
-        itemIndex,
-        value,
-        itemParams: loadParams(itemParams.beginParse()),
-        queryId,
-    };
-}
-
-export type NftBatchMintItem<T> = {
-    itemIndex: bigint,
-    value?: bigint,
-    itemParams: T,
-}
-
-export function storeNftBatchMintItem<T>(request: NftBatchMintItem<T>, storeParams: (src: T) => (builder: Builder) => void): (builder: Builder) => void {
-    return (builder: Builder) => {
-        builder.storeCoins(request.value ?? toNano('0.03'));
-        builder.storeRef(beginCell().store(storeParams(request.itemParams)).endCell());
-    };
-}
-
-export function loadNftBatchMintItem<T>(slice: Slice, loadParams: (slice: Slice) => T): NftBatchMintItem<T> {
-    const itemIndex = slice.loadUintBig(64);
-    const value = slice.loadCoins();
-    const itemParams = slice.loadRef();
-    return {
-        itemIndex,
-        value,
-        itemParams: loadParams(itemParams.beginParse()),
-    };
-}
-
-export function createNftMintItemValue<T>(
-    storeParams?: (params: T) => (builder: Builder) => void,
-    loadParams?: (slice: Slice) => T
-): DictionaryValue<NftBatchMintItem<T>> {
-    return {
-        serialize(src: NftBatchMintItem<T>, builder: Builder) {
-            if (!storeParams) {
-                throw new Error('storeParams is not defined');
-            }
-
-            builder.store(storeNftBatchMintItem(src, storeParams));
-        },
-        parse(src: Slice): NftBatchMintItem<T> {
-            if (!loadParams) {
-                throw new Error('loadParams is not defined');
-            }
-
-            return loadNftBatchMintItem(src, loadParams);
-        },
-    };
-}
-
-export type NftBatchMintMessage<T> = {
-    queryId?: bigint,
-    requests: NftBatchMintItem<T>[],
-}
-
-export function storeNftBatchMintMessage<T>(src: NftBatchMintMessage<T>, storeParams: (src: T) => (builder: Builder) => void): (builder: Builder) => void {
-    return (builder: Builder) => {
-        const mintOpcode = 2;
-
-        const dict: Dictionary<bigint, NftBatchMintItem<T>> = Dictionary.empty(Dictionary.Keys.BigUint(64), createNftMintItemValue(storeParams));
-        for (const r of src.requests) {
-            if (dict.has(r.itemIndex)) {
-                throw new Error('Duplicate items');
-            }
-            dict.set(r.itemIndex, r);
-        }
-
-        builder.storeUint(mintOpcode, 32);
-        builder.storeUint(src.queryId ?? 0, 64);
-        builder.storeRef(beginCell().storeDictDirect(dict));
-    };
-}
-
-export function loadNftBatchMintMessage<T>(slice: Slice, loadParams: (slice: Slice) => T): NftBatchMintMessage<T> {
-    const mintOpcode = 2;
-    if (slice.loadUint(32) !== mintOpcode) {
-        throw new Error('Wrong opcode');
-    }
-
-    const queryId = slice.loadUintBig(64);
-    const requests = slice.loadDictDirect(
-        Dictionary.Keys.BigUint(64),
-        createNftMintItemValue(undefined, loadParams)
-    );
-    return {
-        queryId: queryId,
-        requests: requests.values(),
-    };
-}
-
-type NftChangeAdminMessage = {
-    queryId?: bigint
-    newAdmin: Address,
-};
-
-export function storeNftChangeAdminMessage(src: NftChangeAdminMessage): (builder: Builder) => void {
-    return (builder: Builder) => {
-        const changeAdminOpcode = 3;
-        builder.storeUint(changeAdminOpcode, 32);
-        builder.storeUint(src.queryId ?? 0, 64);
-        builder.storeAddress(src.newAdmin);
-    };
-}
-
-export function loadNftChangeAdminMessage(slice: Slice): NftChangeAdminMessage {
-    const changeAdminOpcode = 3;
-    if (slice.loadUint(32) !== changeAdminOpcode) {
-        throw new Error('Wrong opcode');
-    }
-
-    const queryId = slice.loadUintBig(64);
-    const newAdmin = slice.loadAddress();
-    return {
-        queryId,
-        newAdmin,
-    };
-}
-
-type NftChangeContentMessage = {
-    queryId?: bigint,
-    newContent: Cell,
-    newRoyaltyParams: Cell,
-}
-
-export function storeNftChangeContentMessage(src: NftChangeContentMessage): (builder: Builder) => void {
-    return (builder: Builder) => {
-        const changeContentOpcode = 4;
-        builder.storeUint(changeContentOpcode, 32);
-        builder.storeUint(src.queryId ?? 0, 64);
-        builder.storeRef(src.newContent);
-        builder.storeRef(src.newRoyaltyParams);
-    };
-}
-
-export function loadNftChangeContentMessage(slice: Slice): NftChangeContentMessage {
-    const changeContentOpcode = 4;
-    if (slice.loadUint(32) !== changeContentOpcode) {
-        throw new Error('Wrong opcode');
-    }
-
-    const queryId = slice.loadUintBig(64);
-    const newContent = slice.loadRef();
-    const newRoyaltyParams = slice.loadRef();
-    return {
-        queryId,
-        newContent,
-        newRoyaltyParams,
-    };
-}
+import {NftChangeContentMessage, storeNftChangeContentMessage} from "./types/NftChangeContentMessage";
+import {storeNftMintMessage} from "./types/NftMintMessage";
+import {NftMintItemParams, storeNftBatchMintMessage} from "./types/NftBatchMintMessage";
+import {storeNftChangeAdminMessage} from "./types/NftChangeAdminMessage";
+import {ParamsValue} from "./types/ParamsValue";
 
 export abstract class NftCollectionBase<T> implements Contract {
     static code = Cell.fromBase64(nftCollectionEditableCode.codeBoc);
 
     public readonly contentResolver?: ContentResolver;
 
-    public readonly storeNftItemParams?: (src: T) => (builder: Builder) => void;
-
-    public readonly loadNftItemParams?: (slice: Slice) => T;
+    public readonly itemParamsValue?: ParamsValue<T>;
 
     constructor(
         public readonly address: Address,
-        public sender?: Sender,
-        public readonly init?: { code: Cell, data: Cell },
+        public readonly init?: StateInit,
         contentResolver?: ContentResolver,
-        storeNftItemParams?: (src: T) => (builder: Builder) => void,
-        loadNftItemParams?: (slice: Slice) => T
+        nftItemParamsValue?: ParamsValue<T>
     ) {
         this.contentResolver = contentResolver;
-        this.storeNftItemParams = storeNftItemParams;
-        this.loadNftItemParams = loadNftItemParams;
+        this.itemParamsValue = nftItemParamsValue;
     }
 
-    async sendMint(provider: ContractProvider, message: NftMintMessage<T>, args?: {
+    async sendDeploy(provider: ContractProvider, sender: Sender, value?: bigint) {
+        await provider.internal(sender, {
+            value: value ?? toNano('0.05'),
+            bounce: true,
+        });
+    }
+
+    async sendMint(provider: ContractProvider, sender: Sender, item: NftMintItemParams<T>, options?: {
         value?: bigint,
-        bounce?: boolean
+        queryId?: bigint
     }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-        if (!this.storeNftItemParams) {
-            throw new Error('storeNftItemParams is not defined');
+        if (this.itemParamsValue === undefined) {
+            throw new Error('No item params value');
         }
 
-        await provider.internal(this.sender, {
-            value: args?.value ?? toNano('0.05'),
-            bounce: args?.bounce ?? true,
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
+            bounce: true,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().store(storeNftMintMessage(message, this.storeNftItemParams)).endCell(),
+            body: beginCell().store(storeNftMintMessage({
+                queryId: options?.queryId ?? 0n,
+                itemIndex: item.index,
+                itemParams: item,
+                value: item.value ?? toNano('0.03'),
+            }, this.itemParamsValue.store)).endCell(),
         });
     }
 
-    async sendBatchMint(provider: ContractProvider, message: NftBatchMintMessage<T>, args?: {
+    async sendBatchMint(provider: ContractProvider, sender: Sender, items: NftMintItemParams<T>[], options?: {
         value?: bigint,
-        bounce?: boolean
+        queryId?: bigint
     }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
+        if (this.itemParamsValue === undefined) {
+            throw new Error('No item params value');
         }
 
-        if (!this.storeNftItemParams) {
-            throw new Error('storeNftItemParams is not defined');
-        }
-
-        await provider.internal(this.sender, {
-            value: args?.value ?? toNano('0.05'),
-            bounce: args?.bounce ?? true,
-            body: beginCell().store(storeNftBatchMintMessage(message, this.storeNftItemParams)).endCell(),
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05') * BigInt(items.length),
+            bounce: true,
+            body: beginCell().store(storeNftBatchMintMessage({
+                queryId: options?.queryId ?? 0n,
+                requests: items.map((item) => ({
+                    index: item.index,
+                    params: item,
+                    value: item.value ?? toNano('0.03'),
+                })),
+            }, this.itemParamsValue.store)).endCell(),
         });
     }
 
-    async sendDeploy(provider: ContractProvider, args?: { value?: bigint, bounce?: boolean }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-        await provider.internal(this.sender, {
-            value: args?.value ?? toNano('0.05'),
-            bounce: args?.bounce ?? true,
-        });
-    }
-
-    async sendChangeAdmin(provider: ContractProvider, message: NftChangeAdminMessage, args?: {
+    async sendChangeAdmin(provider: ContractProvider, sender: Sender, newAdmin: Address, options?: {
         value?: bigint,
-        bounce?: boolean
+        queryId?: bigint
     }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-
-        await provider.internal(this.sender, {
-            value: args?.value ?? toNano('0.05'),
-            bounce: args?.bounce ?? true,
-            body: beginCell().store(storeNftChangeAdminMessage(message)).endCell(),
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
+            bounce: true,
+            body: beginCell().store(storeNftChangeAdminMessage({
+                newAdmin: newAdmin,
+                queryId: options?.queryId ?? 0n,
+            })).endCell(),
         });
     }
 
-    async sendChangeContent(provider: ContractProvider, message: NftChangeContentMessage, args?: {
+    async sendChangeContent(provider: ContractProvider, sender: Sender, message: NftChangeContentMessage, options?: {
         value?: bigint,
-        bounce?: boolean
+        queryId?: bigint
     }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-
-        await provider.internal(this.sender, {
-            value: args?.value ?? toNano('0.05'),
-            bounce: args?.bounce ?? true,
-            body: beginCell().store(storeNftChangeContentMessage(message)).endCell(),
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
+            bounce: true,
+            body: beginCell().store(storeNftChangeContentMessage({
+                queryId: options?.queryId ?? 0n,
+                newContent: message.newContent,
+                newRoyaltyParams: message.newRoyaltyParams,
+            })).endCell(),
         });
     }
 
     async getItemAddress(provider: ContractProvider, index: bigint) {
-        return (await provider.get('get_nft_address_by_index', [{type: 'int', value: index}])).stack.readAddress();
+        const ret = await provider.get('get_nft_address_by_index', [{type: 'int', value: index}]);
+        return ret.stack.readAddress();
     }
 
     async getData(provider: ContractProvider): Promise<NftCollectionData> {
@@ -323,12 +128,13 @@ export abstract class NftCollectionBase<T> implements Contract {
     }
 
     async getItemContent(provider: ContractProvider, index: bigint, individualContent: Cell): Promise<Cell> {
-        return (await provider.get('get_nft_content', [{
+        const res = await provider.get('get_nft_content', [{
             type: 'int',
             value: index,
         }, {
             type: 'cell',
             cell: individualContent,
-        }])).stack.readCell();
+        }]);
+        return res.stack.readCell();
     }
 }

@@ -16,7 +16,12 @@ function generateParamName(output: string): string {
     return pascalCase(fileName(output)) + 'Code';
 }
 
-export async function buildContract(args: { sources: SourceResolver, writer: Writer, targets: string[], output: string }) {
+export async function buildContract(args: {
+    sources: SourceResolver,
+    writer: Writer,
+    targets: string[],
+    output: string
+}) {
     const compileResult = await compileFunc({
         sources: args.sources,
         targets: args.targets,

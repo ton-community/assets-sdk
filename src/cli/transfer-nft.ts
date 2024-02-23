@@ -23,11 +23,11 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
+    const {sdk, network, sender} = await createEnv();
     const {nftAddress, recipient} = await promptForUserInput();
 
     const item = sdk.openNftItem(nftAddress);
-    await item.sendTransfer({newOwner: recipient});
+    await item.send(sender, recipient);
 
     const nftTransferInfo = {
         name: 'Transfer NFT',

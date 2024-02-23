@@ -1,29 +1,8 @@
 import {Address, Cell} from "@ton/core";
-import {AssetsSDK, createHighloadV2, ExtendedTonClient4, importKey, PinataStorage, S3Storage} from "..";
-import {getHttpV4Endpoint} from '@orbs-network/ton-access';
+import {AssetsSDK, createApi, createWallet, importKey, PinataStorage, S3Storage} from "..";
 import {DefaultContentResolver} from "../content";
 import chalk from "chalk";
 import boxen from "boxen";
-
-export type WalletType = 'highload-v2';
-
-export async function createWallet(type: WalletType, publicKey: Buffer) {
-    if (type === 'highload-v2') {
-        return await createHighloadV2(publicKey);
-    }
-    throw new Error(`Unknown wallet type: ${type}`);
-}
-
-export async function createClient(network: string) {
-    if (!(network === 'testnet' || network === 'mainnet')) {
-        throw new Error(`Unknown network: ${network}`);
-    }
-    return new ExtendedTonClient4({
-        endpoint: await getHttpV4Endpoint({
-            network,
-        }),
-    });
-}
 
 export function createStorageEnv() {
     if (process.env.STORAGE_TYPE === undefined) throw new Error('No STORAGE_TYPE in env!');
@@ -81,18 +60,21 @@ export async function createEnv() {
     if (process.env.WALLET_TYPE !== 'highload-v2') throw new Error(`Unknown wallet type: ${process.env.WALLET_TYPE}`);
     if (process.env.MNEMONIC === undefined) throw new Error('No MNEMONIC in env!');
     if (process.env.NETWORK === undefined) throw new Error('No NETWORK in env!');
+    if (process.env.NETWORK !== 'mainnet' && process.env.NETWORK !== 'testnet') throw new Error(`Unknown network: ${process.env.NETWORK}`);
 
     const contentResolver = createContentResolver();
     const storage = createStorageEnv();
-    const client = await createClient(process.env.NETWORK);
+    const client = await createApi(process.env.NETWORK);
     const keyPair = await importKey(process.env.MNEMONIC);
     const {publicKey, secretKey} = keyPair;
+
     const walletContract = await createWallet(process.env.WALLET_TYPE, publicKey);
-    const wallet = client.openExtended(walletContract).sender(keyPair.secretKey);
+    const sender = client.open(walletContract).sender(keyPair.secretKey);
+
     const sdk = AssetsSDK.create({
         storage,
         api: client,
-        sender: wallet,
+        sender: sender,
         contentResolver
     });
 
@@ -100,7 +82,7 @@ export async function createEnv() {
         sdk,
         network: process.env.NETWORK,
         storage: storage,
-        wallet: wallet,
+        sender: sender,
         client: client,
     };
 }
@@ -170,4 +152,17 @@ export function formatAddressLink(address: Address | null | void, network: strin
     }
 
     return `https://${network === 'testnet' ? 'testnet.' : ''}tonviewer.com/${formatAddress(address, network)}`;
+}
+
+export async function retry<T>(fn: () => Promise<T>, options?: { name?: string, retries?: number, delay?: number }): Promise<T> {
+    let { retries, delay, name } = { retries: 3, delay: 1000, ...options };
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            console.log(`Attempt ${i + 1} failed: ${name ? name + ': ' : ''}${e}`);
+        }
+        await new Promise(resolve => setTimeout(resolve, delay * 2 ** i));
+    }
+    throw new Error('Exceeded number of retries');
 }

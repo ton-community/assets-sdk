@@ -4,18 +4,18 @@ import {Address} from '@ton/core';
 
 type UserInput = {
     address: Address;
-    owner: Address;
+    recipient: Address;
     amount: bigint;
 };
 
-async function promptForUserInput(params: { defaultOwner: string }): Promise<UserInput> {
-    const {address, owner, amount} = await inquirer.prompt([{
+async function promptForUserInput(params: { defaultRecipient: string }): Promise<UserInput> {
+    const {address, recipient, amount} = await inquirer.prompt([{
         name: 'address',
         message: 'Enter jetton address'
     }, {
-        name: 'owner',
-        message: 'Enter minted jetton owner (default: your wallet address)',
-        default: params.defaultOwner,
+        name: 'recipient',
+        message: 'Enter minted jetton recipient (default: your wallet address)',
+        default: params.defaultRecipient,
     }, {
         name: 'amount',
         message: 'Enter amount in jetton units',
@@ -28,24 +28,24 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 
     return {
         address: Address.parse(address),
-        owner: Address.parse(owner),
+        recipient: Address.parse(recipient),
         amount: BigInt(amount),
     };
 }
 
 export async function main() {
-    const {sdk, network, wallet} = await createEnv();
-    const {address, owner, amount} = await promptForUserInput({
-        defaultOwner: formatAddress(wallet.address, network)
+    const {sdk, network, sender} = await createEnv();
+    const {address, recipient, amount} = await promptForUserInput({
+        defaultRecipient: formatAddress(sender.address, network)
     });
 
     const jetton = sdk.openJetton(address);
-    await jetton.sendMint({to: owner, amount: amount});
+    await jetton.sendMint(sender, recipient, amount);
 
     const jettonMintInfo = {
         name: 'Minted Jetton',
         'minted jetton': jetton.address,
-        'owner': owner,
+        'recipient': recipient,
         'amount': amount,
     };
     printInfo(jettonMintInfo, network);

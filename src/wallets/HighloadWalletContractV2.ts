@@ -22,10 +22,6 @@ import {sleep} from "../utils";
 
 export class HighloadWalletContractV2 implements Contract {
 
-    static create(args: { workchain: number, publicKey: Buffer, walletId?: Maybe<number> }) {
-        return new HighloadWalletContractV2(args.workchain, args.publicKey, args.walletId);
-    }
-
     public readonly workchain: number;
     public readonly publicKey: Buffer;
     public readonly address: Address;
@@ -51,6 +47,10 @@ export class HighloadWalletContractV2 implements Contract {
             .endCell();
         this.init = {code, data};
         this.address = contractAddress(this.workchain, this.init);
+    }
+
+    static create(args: { workchain: number, publicKey: Buffer, walletId?: Maybe<number> }) {
+        return new HighloadWalletContractV2(args.workchain, args.publicKey, args.walletId);
     }
 
     /**

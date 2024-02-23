@@ -1,6 +1,6 @@
 import {HighloadWalletContractV2} from "./HighloadWalletContractV2";
 import {KeyPair} from "@ton/crypto";
-import {API, createApi} from "../client/api";
+import {createApi, TonClientApi} from "../client/ton-client-api";
 import {Sender} from "@ton/core";
 
 const WORKCHAIN = 0;
@@ -21,10 +21,10 @@ export function createWallet(walletType: WalletType, publicKey: Buffer) {
 }
 
 export async function createSender(walletType: WalletType, keypair: KeyPair, network: 'testnet' | 'mainnet'): Promise<Sender>;
-export async function createSender(walletType: WalletType, keypair: KeyPair, client: API): Promise<Sender>;
-export async function createSender(walletType: WalletType, keypair: KeyPair, clientOrNetwork: API | 'testnet' | 'mainnet'): Promise<Sender> {
+export async function createSender(walletType: WalletType, keypair: KeyPair, client: TonClientApi): Promise<Sender>;
+export async function createSender(walletType: WalletType, keypair: KeyPair, clientOrNetwork: TonClientApi | 'testnet' | 'mainnet'): Promise<Sender> {
     const isNetwork = clientOrNetwork === 'testnet' || clientOrNetwork === 'mainnet';
     const client = isNetwork ? await createApi(clientOrNetwork) : clientOrNetwork;
     const wallet = createWallet(walletType, keypair.publicKey);
-    return client.openExtended(wallet).sender(keypair.secretKey);
+    return client.open(wallet).sender(keypair.secretKey);
 }

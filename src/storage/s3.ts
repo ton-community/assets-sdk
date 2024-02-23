@@ -17,8 +17,8 @@ export class S3Storage implements Storage {
     private readonly bucket: string;
 
     private readonly s3: Deferred<S3> = defer(async () => {
-        const ctor = await import('@aws-sdk/client-s3').then((m) => m.S3);
-        return new ctor({
+        const s3 = await import('@aws-sdk/client-s3').then((m) => m.S3);
+        return new s3({
             credentials: {
                 accessKeyId: this.accessKeyId,
                 secretAccessKey: this.secretAccessKey,
@@ -26,14 +26,14 @@ export class S3Storage implements Storage {
         });
     });
 
-    public static create(params: S3StorageParams) {
-        return new S3Storage(params.s3AccessKeyId, params.s3SecretAccessKey, params.s3Bucket);
-    }
-
     constructor(accessKeyId: string, secretAccessKey: string, bucket: string) {
         this.accessKeyId = accessKeyId;
         this.secretAccessKey = secretAccessKey;
         this.bucket = bucket;
+    }
+
+    public static create(params: S3StorageParams) {
+        return new S3Storage(params.s3AccessKeyId, params.s3SecretAccessKey, params.s3Bucket);
     }
 
     async uploadFile(contents: Buffer): Promise<string> {

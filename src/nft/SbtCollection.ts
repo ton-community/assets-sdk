@@ -1,90 +1,63 @@
-import {Address, beginCell, Builder, Cell, contractAddress, Sender, Slice} from "@ton/core";
+import {Address, beginCell, Cell, contractAddress, ContractProvider} from "@ton/core";
 import {NftCollectionBase} from "./NftCollectionBase";
 import {ContentResolver} from "../content";
-import {NftRoyaltyParams, storeNftCollectionData} from './NftCollection';
 import {SbtItem} from "./SbtItem";
-import {ExtendedContractProvider} from "../client/ExtendedContractProvider";
+import {
+    parseSbtCollectionTransaction,
+    SbtCollectionAction
+} from "./types/SbtCollectionAction";
+import {PartialBy} from "../utils";
+import {NftCollectionData, storeNftCollectionData} from "./types/NftCollectionData";
+import {createSbtItemParamsValue, SbtItemParams} from "./types/SbtItemParams";
 
-export type SbtItemParams<T> = {
-    owner: Address,
-    individualContent: T,
-    authority?: Address,
-};
+export type SbtCollectionConfig = Omit<PartialBy<NftCollectionData, 'itemCode'>, 'royalty'>;
 
-export type SbtItemStringParams = SbtItemParams<string>;
-
-export type SbtItemCellParams = SbtItemParams<Cell>;
-
-export function storeSbtItemStringParams(src: SbtItemStringParams) {
-    return (builder: Builder) => {
-        builder.storeAddress(src.owner);
-        builder.storeRef(beginCell().storeStringTail(src.individualContent).endCell());
-        builder.storeAddress(src.authority);
-    };
+export function sbtCollectionConfigToCell(config: SbtCollectionConfig): Cell {
+    return beginCell().store(storeNftCollectionData({
+        admin: config.admin,
+        content: config.content,
+        itemCode: config.itemCode ?? SbtItem.sbtCode,
+        royalty: {
+            numerator: 0n,
+            denominator: 1n,
+            recipient: config.admin,
+        },
+    })).endCell();
 }
 
-export function loadSbtItemStringParams(slice: Slice): SbtItemStringParams {
-    const owner = slice.loadAddress();
-    const content = slice.loadRef().beginParse().loadStringRefTail();
-    const authority = slice.loadAddress();
-
-    return {owner, individualContent: content, authority};
-}
-
-export function storeSbtItemCellParams(src: SbtItemCellParams) {
-    return (builder: Builder) => {
-        builder.storeAddress(src.owner);
-        builder.storeRef(src.individualContent);
-        builder.storeAddress(src.authority);
-    };
-}
-
-export function loadSbtItemCellParams(slice: Slice): SbtItemCellParams {
-    const owner = slice.loadAddress();
-    const content = slice.loadRef();
-    const authority = slice.loadAddress();
-
-    return {owner, individualContent: content, authority};
-}
-
-export class SbtCollection<T = string> extends NftCollectionBase<SbtItemParams<T>> {
-    static create<T = string>(params: {
-        admin: Address,
-        content: Cell,
-        royalty?: NftRoyaltyParams,
-        storeSbtItemParams?: (params: SbtItemParams<T>) => (builder: Builder) => void,
-        loadSbtItemParams?: (slice: Slice) => SbtItemParams<T>,
-    }, sender?: Sender, contentResolver?: ContentResolver) {
-        const data = beginCell().store(storeNftCollectionData({
-            admin: params.admin,
-            content: params.content,
-            itemCode: SbtItem.sbtCode,
-            royalty: {
-                numerator: params.royalty?.numerator ?? 0n,
-                denominator: params.royalty?.denominator ?? 1n,
-                recipient: params.royalty?.recipient ?? params.admin,
-            },
-        })).endCell();
-        const init = {data, code: SbtCollection.code};
-        const storeSbtItemParams = params.storeSbtItemParams ?? storeSbtItemStringParams as (params: SbtItemParams<T>) => (builder: Builder) => void;
-        const loadSbtItemParams = params.loadSbtItemParams ?? loadSbtItemStringParams as (slice: Slice) => SbtItemParams<T>;
-        return new SbtCollection(contractAddress(0, init), sender, init, contentResolver, storeSbtItemParams, loadSbtItemParams);
+export class SbtCollection extends NftCollectionBase<SbtItemParams> {
+    static createFromConfig(config: SbtCollectionConfig, code?: Cell, workchain?: number, contentResolver?: ContentResolver) {
+        const data = sbtCollectionConfigToCell(config);
+        const init = {data, code: code ?? SbtCollection.code};
+        return new SbtCollection(contractAddress(workchain ?? 0, init), init, contentResolver, createSbtItemParamsValue());
     }
 
-    static open<T>(
-        address: Address,
-        sender?: Sender,
-        contentResolver?: ContentResolver,
-        storeSbtItemParams?: (params: SbtItemParams<T>) => (builder: Builder) => void,
-        loadSbtItemParams?: (slice: Slice) => SbtItemParams<T>,
-    ) {
-        storeSbtItemParams ??= storeSbtItemStringParams as (params: SbtItemParams<T>) => (builder: Builder) => void;
-        loadSbtItemParams ??= loadSbtItemStringParams as (slice: Slice) => SbtItemParams<T>;
-        return new SbtCollection(address, sender, undefined, contentResolver, storeSbtItemParams, loadSbtItemParams);
+    static createFromAddress(address: Address, contentResolver?: ContentResolver) {
+        return new SbtCollection(address, undefined, contentResolver, createSbtItemParamsValue());
     }
 
-    async getItem(provider: ExtendedContractProvider, index: bigint) {
+    async getItem(provider: ContractProvider, index: bigint) {
         const nftItemAddress = await this.getItemAddress(provider, index);
-        return provider.reopen(new SbtItem(nftItemAddress, this.sender, this.contentResolver));
+        return provider.open(new SbtItem(nftItemAddress, undefined, this.contentResolver));
+    }
+
+    async getActions(provider: ContractProvider, options?: { lt?: never, hash?: never, limit?: number } | {
+        lt: bigint,
+        hash: Buffer,
+        limit?: number
+    }): Promise<SbtCollectionAction[]> {
+        let {lt, hash, limit} = options ?? {};
+        if (!lt || !hash) {
+            const state = await provider.getState();
+            if (!state.last) {
+                return [];
+            }
+
+            lt = state.last.lt;
+            hash = state.last.hash;
+        }
+
+        const messages = await provider.getTransactions(this.address, lt, hash, limit);
+        return messages.map(tx => parseSbtCollectionTransaction(tx));
     }
 }

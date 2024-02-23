@@ -1,7 +1,5 @@
 import {Address, toNano} from "@ton/core";
-import {AssetsSDK, importKey, PinataStorageParams} from "../src";
-import {createApi} from "../src/client/api";
-import {createSender} from "../src/wallets/wallets";
+import {AssetsSDK, createApi, createSender, importKey, PinataStorageParams} from "../src";
 
 async function main() {
     const NETWORK = 'testnet';
@@ -11,7 +9,7 @@ async function main() {
     const sender = await createSender('highload-v2', keyPair, api);
 
     const storage: PinataStorageParams = {
-        pinataApiKey: process.env.PINATA_API!,
+        pinataApiKey: process.env.PINATA_API_KEY!,
         pinataSecretKey: process.env.PINATA_SECRET!,
     }
 
@@ -28,7 +26,7 @@ async function main() {
 
     const RECEIVER_ADDRESS = Address.parse('RECEIVER_ADDRESS');
     const myJettonWallet = await jetton.getWallet(sdk.sender!.address!);
-    await myJettonWallet.sendTransfer({to: RECEIVER_ADDRESS, amount: toNano(10)});
+    await myJettonWallet.send(sender, RECEIVER_ADDRESS, toNano(10));
 }
 
 main().catch(console.error);

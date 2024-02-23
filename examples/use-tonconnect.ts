@@ -1,6 +1,5 @@
 import {Address, beginCell, Sender, SenderArguments, storeStateInit, toNano} from "@ton/core";
-import {AssetsSDK, PinataStorageParams} from "../src";
-import {createApi} from "../src/client/api";
+import {AssetsSDK, createApi, PinataStorageParams} from "../src";
 
 /**
  * This is a mock for the TonConnect UI, which is used to send transactions.
@@ -113,7 +112,7 @@ async function main() {
     const sender = new TonConnectProvider(provider);
 
     const storage: PinataStorageParams = {
-        pinataApiKey: process.env.PINATA_API!,
+        pinataApiKey: process.env.PINATA_API_KEY!,
         pinataSecretKey: process.env.PINATA_SECRET!,
     }
 
@@ -130,12 +129,7 @@ async function main() {
         decimals: 9,
         description: 'Test jetton',
         symbol: 'TEST',
-    }, {
-        premint: {
-            to: sdk.sender?.address!,
-            amount: toNano('100'),
-        },
-    });
+    }, {adminAddress: sender.address, premintAmount: toNano('100')});
 
     console.log('Created jetton with address', jetton.address);
 }
