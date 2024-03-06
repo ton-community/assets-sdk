@@ -1,101 +1,134 @@
-import { Contract, Address, Sender, ContractProvider, toNano, SendMode, beginCell, Cell, Slice, Transaction } from "@ton/core";
-import { NoSenderError } from "../error";
-import { JettonWalletData, JettonTransferRequest, JettonBurnRequest, JettonTransferBody, JettonTransfer } from "./data";
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    StateInit,
+    toNano,
+} from "@ton/core";
+import {jettonWalletCode} from "./contracts/build/jetton-wallet";
+import {parseExcessReturnOptions, parseNotifyOptions, SendTransferOptions} from "../common/types";
+import {PartialBy} from "../utils";
+import {storeJettonTransferMessage} from "./types/JettonTransferMessage";
+import {storeJettonBurnMessage} from "./types/JettonBurnMessage";
+import {JettonWalletAction, parseJettonWalletTransaction} from "./types/JettonWalletAction";
+import {JettonWalletData} from "./types/JettonWalletData";
+
+export function jettonWalletConfigToCell(config: JettonWalletData): Cell {
+    return beginCell()
+        .storeCoins(config.balance)
+        .storeAddress(config.owner)
+        .storeAddress(config.jettonMaster)
+        .storeRef(config.jettonWalletCode)
+        .endCell();
+}
+
+export type JettonWalletConfig = Omit<PartialBy<JettonWalletData, 'jettonWalletCode'>, 'balance'>;
 
 export class JettonWallet implements Contract {
-    static code = Cell.fromBase64('te6ccgECEgEAAzQAART/APSkE/S88sgLAQIBYgIDAgLMBAUAG6D2BdqJofQB9IH0gahhAgHUBgcCAUgICQDDCDHAJJfBOAB0NMDAXGwlRNfA/AL4PpA+kAx+gAxcdch+gAx+gAwc6m0AALTH4IQD4p+pVIgupUxNFnwCOCCEBeNRRlSILqWMUREA/AJ4DWCEFlfB7y6k1nwCuBfBIQP8vCAAET6RDBwuvLhTYAIBIAoLAgEgEBEB8QD0z/6APpAIfAB7UTQ+gD6QPpA1DBRNqFSKscF8uLBKML/8uLCVDRCcFQgE1QUA8hQBPoCWM8WAc8WzMkiyMsBEvQA9ADLAMkg+QBwdMjLAsoHy//J0AT6QPQEMfoAINdJwgDy4sR3gBjIywVQCM8WcPoCF8trE8yAMA/c7UTQ+gD6QPpA1DAI0z/6AFFRoAX6QPpAU1vHBVRzbXBUIBNUFAPIUAT6AljPFgHPFszJIsjLARL0APQAywDJ+QBwdMjLAsoHy//J0FANxwUcsfLiwwr6AFGooYIImJaAggiYloAStgihggjk4cCgGKEn4w8l1wsBwwAjgDQ4PAK6CEBeNRRnIyx8Zyz9QB/oCIs8WUAbPFiX6AlADzxbJUAXMI5FykXHiUAioE6CCCOThwKoAggiYloCgoBS88uLFBMmAQPsAECPIUAT6AljPFgHPFszJ7VQAcFJ5oBihghBzYtCcyMsfUjDLP1j6AlAHzxZQB88WyXGAEMjLBSTPFlAG+gIVy2oUzMlx+wAQJBAjAA4QSRA4N18EAHbCALCOIYIQ1TJ223CAEMjLBVAIzxZQBPoCFstqEssfEss/yXL7AJM1bCHiA8hQBPoCWM8WAc8WzMntVADbO1E0PoA+kD6QNQwB9M/+gD6QDBRUaFSSccF8uLBJ8L/8uLCggjk4cCqABagFrzy4sOCEHvdl97Iyx8Vyz9QA/oCIs8WAc8WyXGAGMjLBSTPFnD6AstqzMmAQPsAQBPIUAT6AljPFgHPFszJ7VSAAgyAINch7UTQ+gD6QPpA1DAE0x+CEBeNRRlSILqCEHvdl94TuhKx8uLF0z8x+gAwE6BQI8hQBPoCWM8WAc8WzMntVIA==');
+    static code = Cell.fromBase64(jettonWalletCode.codeBoc);
 
-    constructor(public readonly address: Address, public sender?: Sender) {}
+    constructor(public readonly address: Address, public readonly init?: StateInit) {
+    }
+
+    static createFromConfig(config: JettonWalletConfig, code?: Cell, workchain?: number) {
+        const data = jettonWalletConfigToCell({
+            balance: 0n,
+            owner: config.owner,
+            jettonMaster: config.jettonMaster,
+            jettonWalletCode: code ?? JettonWallet.code,
+        });
+        const init = {data, code: code ?? JettonWallet.code};
+        return new JettonWallet(contractAddress(workchain ?? 0, init), init);
+    }
+
+    static createFromAddress(address: Address): JettonWallet {
+        return new JettonWallet(address);
+    }
+
+    async sendDeploy(provider: ContractProvider, sender: Sender, value?: bigint) {
+        await provider.internal(sender, {
+            value: value ?? toNano('0.05'),
+            bounce: true,
+        });
+    }
+
+    async send(provider: ContractProvider, sender: Sender, recipient: Address, amount: bigint, options?: SendTransferOptions & {
+        customPayload?: Cell,
+        value?: bigint,
+        queryId?: bigint
+    }) {
+        const notification = parseNotifyOptions(options?.notify);
+        const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
+
+        await provider.internal(sender, {
+            value: (options?.value ?? toNano('0.05')) + (notification?.amount ?? 0n),
+            bounce: true,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().store(storeJettonTransferMessage({
+                queryId: options?.queryId ?? 0n,
+                amount: amount,
+                destination: recipient,
+                responseDestination: excessReturn?.address ?? null,
+                customPayload: options?.customPayload ?? null,
+                forwardAmount: notification?.amount ?? 0n,
+                forwardPayload: notification?.payload ?? null,
+            })).endCell(),
+        });
+    }
+
+    async sendBurn(provider: ContractProvider, sender: Sender, amount: bigint, options?: Pick<SendTransferOptions, 'returnExcess'> & {
+        customPayload?: Cell,
+        value?: bigint,
+        queryId?: bigint
+    }) {
+        const excessReturn = parseExcessReturnOptions(options?.returnExcess, sender);
+
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
+            bounce: true,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().store(storeJettonBurnMessage({
+                queryId: options?.queryId ?? 0n,
+                amount: amount,
+                responseDestination: excessReturn?.address ?? null,
+                customPayload: options?.customPayload ?? null,
+            })).endCell(),
+        });
+    }
 
     async getData(provider: ContractProvider): Promise<JettonWalletData> {
-        const { stack } = await provider.get('get_wallet_data', []);
+        const {stack} = await provider.get('get_wallet_data', []);
         return {
             balance: stack.readBigNumber(),
             owner: stack.readAddress(),
-            jetton: stack.readAddress(),
-            code: stack.readCell(),
+            jettonMaster: stack.readAddress(),
+            jettonWalletCode: stack.readCell(),
         };
     }
 
-    async sendTransfer(provider: ContractProvider, request: JettonTransferRequest) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-        const response = request.responseDestination ?? this.sender.address;
-        await provider.internal(this.sender, {
-            value: request.value ?? toNano('0.05'),
-            bounce: true,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(0x0f8a7ea5, 32)
-                .storeUint(request.queryId ?? 0, 64)
-                .storeCoins(request.amount)
-                .storeAddress(request.to)
-                .storeAddress(response)
-                .storeMaybeRef(request.customPayload)
-                .storeCoins(request.forwardAmount ?? 0)
-                .storeMaybeRef(request.forwardPayload)
-                .endCell(),
-        });
-    }
+    async getActions(provider: ContractProvider, options?: { lt?: never, hash?: never, limit?: number } | {
+        lt: bigint,
+        hash: Buffer,
+        limit?: number
+    }): Promise<JettonWalletAction[]> {
+        let {lt, hash, limit} = options ?? {};
+        if (!lt || !hash) {
+            const state = await provider.getState();
+            if (!state.last) {
+                return [];
+            }
 
-    async sendBurn(provider: ContractProvider, request: JettonBurnRequest) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
+            lt = state.last.lt;
+            hash = state.last.hash;
         }
-        const response = request.responseDestination ?? this.sender.address;
-        await provider.internal(this.sender, {
-            value: request.value ?? toNano('0.02'),
-            bounce: true,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(0x595f07bc, 32)
-                .storeUint(request.queryId ?? 0, 64)
-                .storeCoins(request.amount)
-                .storeAddress(response)
-                .storeMaybeRef(request.customPayload)
-                .endCell(),
-        });
-    }
 
-    static parseTransferBody(body: Cell | Slice): JettonTransferBody {
-        if (body instanceof Cell) {
-            body = body.beginParse();
-        }
-        if (body.loadUint(32) !== 0x0f8a7ea5) {
-            throw new Error('Wrong opcode');
-        }
-        const queryId = body.loadUintBig(64);
-        const amount = body.loadCoins();
-        const destination = body.loadAddress();
-        const responseDestination = body.loadMaybeAddress();
-        const customPayload = body.loadMaybeRef();
-        const forwardAmount = body.loadCoins();
-        const forwardPayloadIsRight = body.loadBoolean();
-        const forwardPayload = forwardPayloadIsRight ? body.loadRef() : body.asCell();
-        return {
-            queryId,
-            amount,
-            destination,
-            responseDestination,
-            customPayload,
-            forwardAmount,
-            forwardPayload,
-        };
-    }
+        const transactions = await provider.getTransactions(this.address, lt, hash, limit);
 
-    static parseTransfer(tx: Transaction): JettonTransfer {
-        if (tx.inMessage?.info.type !== 'internal') {
-            throw new Error('Message must be internal');
-        }
-        if (tx.description.type !== 'generic') {
-            throw new Error('Transaction must be generic');
-        }
-        const body = this.parseTransferBody(tx.inMessage.body);
-        return {
-            ...body,
-            success: (tx.description.computePhase.type === 'vm' && tx.description.computePhase.success && tx.description.actionPhase?.success) ?? false,
-            value: tx.inMessage.info.value.coins,
-        };
+        return transactions.map(tx => parseJettonWalletTransaction(tx));
     }
 }

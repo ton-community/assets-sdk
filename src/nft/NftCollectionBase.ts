@@ -1,137 +1,113 @@
-import { Contract, Address, Sender, Cell, ContractProvider, beginCell, Dictionary, toNano, SendMode, Builder } from "@ton/core";
-import { ExtendedContractProvider } from "../ExtendedContractProvider";
-import { NoSenderError } from "../error";
-import { NftItem } from "./NftItem";
-import { MintRequest, BatchMintRequest, SingleMintRequest, NftCollectionData } from "./data";
-import { ContentResolver, loadFullContent } from "../content";
-import { parseNftContent } from "./content";
-
-function storeSingleMintRequest<T>(request: SingleMintRequest<T>, storeParams: (params: T) => Cell): (builder: Builder) => void {
-    return (builder: Builder) => {
-        builder
-            .storeCoins(request.value ?? toNano('0.03'))
-            .storeRef(request.itemParams instanceof Cell ? request.itemParams : storeParams(request.itemParams))
-    };
-}
+import {Address, beginCell, Cell, Contract, ContractProvider, Sender, SendMode, StateInit, toNano} from "@ton/core";
+import {NftCollectionData} from "./data";
+import {ContentResolver, loadFullContent} from "../content";
+import {parseNftContent} from "./content";
+import {nftCollectionEditableCode} from './contracts/build/nft-collection-editable';
+import {NftChangeContentMessage, storeNftChangeContentMessage} from "./types/NftChangeContentMessage";
+import {storeNftMintMessage} from "./types/NftMintMessage";
+import {NftMintItemParams, storeNftBatchMintMessage} from "./types/NftBatchMintMessage";
+import {storeNftChangeAdminMessage} from "./types/NftChangeAdminMessage";
+import {ParamsValue} from "../common/types/ParamsValue";
 
 export abstract class NftCollectionBase<T> implements Contract {
-    static code = Cell.fromBase64('te6cckECEwEAAf4AART/APSkE/S88sgLAQIBYgIDAgLNBAUCASANDgPr0QY4BIrfAA6GmBgLjYSK3wfSAYAOmP6Z/2omh9IGmf6mpqGEEINJ6cqClAXUcUG6+CgOhBCFRlgFa4QAhkZYKoAueLEn0BCmW1CeWP5Z+A54tkwCB9gHAbKLnjgvlwyJLgAPGBEuABcYEZAmAB8YEvgsIH+XhAYHCAIBIAkKAGA1AtM/UxO78uGSUxO6AfoA1DAoEDRZ8AaOEgGkQ0PIUAXPFhPLP8zMzMntVJJfBeIApjVwA9QwjjeAQPSWb6UgjikGpCCBAPq+k/LBj96BAZMhoFMlu/L0AvoA1DAiVEsw8AYjupMCpALeBJJsIeKz5jAyUERDE8hQBc8WE8s/zMzMye1UACgB+kAwQUTIUAXPFhPLP8zMzMntVAIBIAsMAD1FrwBHAh8AV3gBjIywVYzxZQBPoCE8trEszMyXH7AIAC0AcjLP/gozxbJcCDIywET9AD0AMsAyYAAbPkAdMjLAhLKB8v/ydCACASAPEAAlvILfaiaH0gaZ/qamoYLehqGCxABDuLXTHtRND6QNM/1NTUMBAkXwTQ1DHUMNBxyMsHAc8WzMmAIBIBESAC+12v2omh9IGmf6mpqGDYg6GmH6Yf9IBhAALbT0faiaH0gaZ/qamoYCi+CeAI4APgCwWurO9Q==');
+    static code = Cell.fromBase64(nftCollectionEditableCode.codeBoc);
 
-    constructor(public readonly address: Address, public sender?: Sender, public readonly init?: { code: Cell, data: Cell }, public readonly contentResolver?: ContentResolver) {}
+    public readonly contentResolver?: ContentResolver;
 
-    async getItemAddress(provider: ContractProvider, index: bigint) {
-        return (await provider.get('get_nft_address_by_index', [{ type: 'int', value: index }])).stack.readAddress();
+    public readonly itemParamsValue?: ParamsValue<T>;
+
+    constructor(
+        public readonly address: Address,
+        public readonly init?: StateInit,
+        contentResolver?: ContentResolver,
+        nftItemParamsValue?: ParamsValue<T>
+    ) {
+        this.contentResolver = contentResolver;
+        this.itemParamsValue = nftItemParamsValue;
     }
 
-    async getItem(provider: ExtendedContractProvider, index: bigint) {
-        return provider.reopen(new NftItem(await this.getItemAddress(provider, index), this.sender));
-    }
-
-    abstract paramsToCell(params: T): Cell
-
-    mintMessage(request: MintRequest<T>): Cell {
-        return beginCell()
-            .storeUint(1, 32)
-            .storeUint(request.queryId ?? 0, 64)
-            .storeUint(request.itemIndex, 64)
-            .storeWritable(storeSingleMintRequest(request, this.paramsToCell))
-            .endCell();
-    }
-
-    batchMintMessage(request: BatchMintRequest<T>): Cell {
-        const dict: Dictionary<bigint, SingleMintRequest<T>> = Dictionary.empty(Dictionary.Keys.BigUint(64), {
-            serialize: (r, b) => storeSingleMintRequest(r, this.paramsToCell)(b),
-            parse: () => { throw new Error('Unsupported'); },
-        });
-        for (const r of request.requests) {
-            if (dict.has(r.itemIndex)) {
-                throw new Error('Duplicate items');
-            }
-            dict.set(r.itemIndex, r);
-        }
-
-        return beginCell()
-            .storeUint(2, 32)
-            .storeUint(request.queryId ?? 0, 64)
-            .storeRef(beginCell().storeDictDirect(dict))
-            .endCell();
-    }
-
-    async sendMint(provider: ContractProvider, request: MintRequest<T>) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-        await provider.internal(this.sender, {
-            value: request.requestValue ?? toNano('0.05'),
+    async sendDeploy(provider: ContractProvider, sender: Sender, value?: bigint) {
+        await provider.internal(sender, {
+            value: value ?? toNano('0.05'),
             bounce: true,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: this.mintMessage(request),
         });
     }
 
-    async sendBatchMint(provider: ContractProvider, request: BatchMintRequest<T>) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-        await provider.internal(this.sender, {
-            value: request.requestValue ?? toNano('0.05'),
-            bounce: true,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: this.batchMintMessage(request),
-        });
-    }
-
-    async sendDeploy(provider: ContractProvider, value: bigint) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
-        }
-        await provider.internal(this.sender, {
-            value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
-            bounce: true,
-        })
-    }
-
-    async sendChangeAdmin(provider: ContractProvider, params: {
-        newAdmin: Address,
-        value: bigint,
+    async sendMint(provider: ContractProvider, sender: Sender, item: NftMintItemParams<T>, options?: {
+        value?: bigint,
         queryId?: bigint
     }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
+        if (this.itemParamsValue === undefined) {
+            throw new Error('No item params value');
         }
-        await provider.internal(this.sender, {
-            value: params.value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
+
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
             bounce: true,
-            body: beginCell()
-                .storeUint(3, 32)
-                .storeUint(params.queryId ?? 0, 64)
-                .storeAddress(params.newAdmin)
-                .endCell(),
-        })
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().store(storeNftMintMessage({
+                queryId: options?.queryId ?? 0n,
+                itemIndex: item.index,
+                itemParams: item,
+                value: item.value ?? toNano('0.03'),
+            }, this.itemParamsValue.store)).endCell(),
+        });
     }
 
-    async sendChangeContent(provider: ContractProvider, params: {
-        newContent: Cell,
-        newRoyaltyParams: Cell,
-        value: bigint,
-        queryId?: bigint,
+    async sendBatchMint(provider: ContractProvider, sender: Sender, items: NftMintItemParams<T>[], options?: {
+        value?: bigint,
+        queryId?: bigint
     }) {
-        if (this.sender === undefined) {
-            throw new NoSenderError();
+        if (this.itemParamsValue === undefined) {
+            throw new Error('No item params value');
         }
-        await provider.internal(this.sender, {
-            value: params.value,
-            sendMode: SendMode.PAY_GAS_SEPARATELY,
+
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05') * BigInt(items.length),
             bounce: true,
-            body: beginCell()
-                .storeUint(4, 32)
-                .storeUint(params.queryId ?? 0, 64)
-                .storeRef(params.newContent)
-                .storeRef(params.newRoyaltyParams)
-                .endCell(),
-        })
+            body: beginCell().store(storeNftBatchMintMessage({
+                queryId: options?.queryId ?? 0n,
+                requests: items.map((item) => ({
+                    index: item.index,
+                    params: item,
+                    value: item.value ?? toNano('0.03'),
+                })),
+            }, this.itemParamsValue.store)).endCell(),
+        });
+    }
+
+    async sendChangeAdmin(provider: ContractProvider, sender: Sender, newAdmin: Address, options?: {
+        value?: bigint,
+        queryId?: bigint
+    }) {
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
+            bounce: true,
+            body: beginCell().store(storeNftChangeAdminMessage({
+                newAdmin: newAdmin,
+                queryId: options?.queryId ?? 0n,
+            })).endCell(),
+        });
+    }
+
+    async sendChangeContent(provider: ContractProvider, sender: Sender, message: NftChangeContentMessage, options?: {
+        value?: bigint,
+        queryId?: bigint
+    }) {
+        await provider.internal(sender, {
+            value: options?.value ?? toNano('0.05'),
+            bounce: true,
+            body: beginCell().store(storeNftChangeContentMessage({
+                queryId: options?.queryId ?? 0n,
+                newContent: message.newContent,
+                newRoyaltyParams: message.newRoyaltyParams,
+            })).endCell(),
+        });
+    }
+
+    async getItemAddress(provider: ContractProvider, index: bigint) {
+        const ret = await provider.get('get_nft_address_by_index', [{type: 'int', value: index}]);
+        return ret.stack.readAddress();
     }
 
     async getData(provider: ContractProvider): Promise<NftCollectionData> {
@@ -152,12 +128,13 @@ export abstract class NftCollectionBase<T> implements Contract {
     }
 
     async getItemContent(provider: ContractProvider, index: bigint, individualContent: Cell): Promise<Cell> {
-        return (await provider.get('get_nft_content', [{
+        const res = await provider.get('get_nft_content', [{
             type: 'int',
             value: index,
         }, {
             type: 'cell',
             cell: individualContent,
-        }])).stack.readCell();
+        }]);
+        return res.stack.readCell();
     }
 }

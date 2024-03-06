@@ -1,24 +1,31 @@
-import { Address } from "@ton/core";
-import { GameFiSDK, createWalletV4 } from "../src/index";
+import {Address} from "@ton/core";
+import {AssetsSDK, createApi, createSender, importKey, PinataStorageParams} from "../src";
 
 async function main() {
-    const sdk = await GameFiSDK.create({
-        storage: {
-            pinataApiKey: process.env.PINATA_API!,
-            pinataSecretKey: process.env.PINATA_SECRET!,
-        },
-        api: 'testnet',
-        wallet: await createWalletV4(process.env.MNEMONIC!),
+    const NETWORK = 'testnet';
+    const api = await createApi(NETWORK);
+
+    const keyPair = await importKey(process.env.MNEMONIC!);
+    const sender = await createSender('highload-v2', keyPair, api);
+
+    const storage: PinataStorageParams = {
+        pinataApiKey: process.env.PINATA_API_KEY!,
+        pinataSecretKey: process.env.PINATA_SECRET!,
+    }
+
+    const sdk = AssetsSDK.create({
+        api: api,
+        storage: storage,
+        sender: sender,
     });
 
     console.log('Using wallet', sdk.sender?.address);
 
-    const jetton = await sdk.openJetton(Address.parse('my-jetton-address'));
+    const JETTON_ADDRESS = Address.parse('MY_JETTON_ADDRESS');
+    const jetton = sdk.openJetton(JETTON_ADDRESS);
 
-    await jetton.sendMint({
-        to: Address.parse('any-address'),
-        amount: 1200000n,
-    })
+    const RECEIVER_ADDRESS = Address.parse('RECEIVER_ADDRESS');
+    await jetton.sendMint(sender, RECEIVER_ADDRESS, 1200000n);
 }
 
-main();
+main().catch(console.error);

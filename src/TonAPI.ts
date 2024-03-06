@@ -1,6 +1,6 @@
-import { Address as TONAddress } from '@ton/core';
+import {Address as TONAddress} from '@ton/core';
 import z from 'zod';
-import axios, { AxiosInstance } from 'axios';
+import axios, {AxiosInstance} from 'axios';
 
 const Address = z.string().transform(v => TONAddress.parseRaw(v));
 const HexBuffer = z.string().transform(v => Buffer.from(v, 'hex'));

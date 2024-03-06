@@ -1,6 +1,6 @@
-import { Dictionary } from "@ton/core";
+import {Dictionary} from "@ton/core";
 import z from "zod";
-import { DecodedContent, ParsedContent, decodeSimpleFields, decodeImage, bufferToStr } from "../content";
+import {bufferToStr, DecodedContent, decodeImage, decodeSimpleFields, ParsedContent} from "../content";
 
 export interface NftContent {
     uri?: string,
