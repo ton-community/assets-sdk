@@ -7,10 +7,14 @@ export function sleep(timeout: number): Promise<void> {
     });
 }
 
-export function internalOnchainContentToCell(internal: Record<string, string | number | undefined>): Cell {
+export function internalOnchainContentToCell(internal: Record<string, string | string[] | number | undefined>): Cell {
     const dict = Dictionary.empty(Dictionary.Keys.Buffer(32), Dictionary.Values.Cell());
     for (const k in internal) {
         if ((internal as any)[k] === undefined) {
+            continue;
+        }
+
+        if (k === 'social_links') {
             continue;
         }
         const b = beginCell();

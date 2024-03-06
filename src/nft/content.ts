@@ -6,6 +6,7 @@ export interface NftContent {
     uri?: string,
     name?: string,
     description?: string,
+    social_links?: string[], 
     image?: string,
     imageData?: Buffer,
 }
@@ -17,6 +18,7 @@ export function nftContentToInternal(content: NftContent) {
         description: content.description,
         image: content.image,
         image_data: content.imageData?.toString('base64'),
+        social_links: content.social_links, 
     };
 }
 
