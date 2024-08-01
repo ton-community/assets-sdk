@@ -33,7 +33,7 @@ declare class TonConnectUI {
  * Sender implementation for TonConnect.
  * This class is used to send messages using the TonConnect UI.
  */
-class TonConnectProvider implements Sender {
+class TonConnectSender implements Sender {
 
     /**
      * The TonConnect UI instance.
@@ -50,7 +50,7 @@ class TonConnectProvider implements Sender {
     }
 
     /**
-     * Creates a new TonConnectProvider.
+     * Creates a new TonConnectSender.
      * @param provider
      */
     public constructor(provider: TonConnectUI) {
@@ -109,7 +109,7 @@ async function main() {
     const api = await createApi(NETWORK);
 
     const provider = new TonConnectUI();
-    const sender = new TonConnectProvider(provider);
+    const sender = new TonConnectSender(provider);
 
     const storage: PinataStorageParams = {
         pinataApiKey: process.env.PINATA_API_KEY!,
