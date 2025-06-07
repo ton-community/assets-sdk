@@ -1,0 +1,181 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`sdk deploy Jetton 1`] = `
+[
+  {
+    "address": "EQCfYtnF6GYZs76Cmrtp8DE4TKR3EPy8ufV_m_IbJHBplhRU",
+    "codeHash": "0x0571976c63ec1b7550230a2609dbedb36e1b64ef8d022a16b34ea57063185b2f",
+    "contractName": "JettonMinter",
+    "execute": {
+      "action": undefined,
+      "compute": {
+        "type": "skipped",
+      },
+    },
+    "message": {
+      "in": {
+        "bits": 1783,
+        "cells": 3,
+      },
+      "out": {
+        "bits": 1000,
+        "cells": 2,
+      },
+    },
+    "methodName": "sendMint",
+    "opCode": "0x15",
+    "receiver": "internal",
+    "state": {
+      "code": {
+        "bits": 5046,
+        "cells": 14,
+      },
+      "data": {
+        "bits": 6445,
+        "cells": 20,
+      },
+    },
+    "testName": "sdk deploy Jetton",
+  },
+  {
+    "address": "EQBPABJHLy9WThhpL5UIiDIrUHWzz6Mjhq96hPP4TuMkGPsk",
+    "codeHash": "0x0571976c63ec1b7550230a2609dbedb36e1b64ef8d022a16b34ea57063185b2f",
+    "contractName": "JettonMinter",
+    "execute": {
+      "action": {
+        "resultCode": 0,
+        "skippedActions": 0,
+        "success": true,
+        "totalActionFees": 0,
+        "totalActions": 0,
+        "totalFwdFees": undefined,
+        "totalMessageSize": {
+          "bits": 0,
+          "cells": 0,
+        },
+      },
+      "compute": {
+        "exitCode": 0,
+        "gasUsed": 309,
+        "success": true,
+        "type": "vm",
+        "vmSteps": 5,
+      },
+    },
+    "message": {
+      "in": {
+        "bits": 993,
+        "cells": 1,
+      },
+      "out": {
+        "bits": 0,
+        "cells": 0,
+      },
+    },
+    "methodName": "notSupported",
+    "opCode": "0xffffffff",
+    "receiver": "internal",
+    "state": {
+      "code": {
+        "bits": 5046,
+        "cells": 14,
+      },
+      "data": {
+        "bits": 6445,
+        "cells": 20,
+      },
+    },
+    "testName": "sdk deploy Jetton",
+  },
+]
+`;
+
+exports[`sdk deploy NFT 1`] = `
+[
+  {
+    "address": "EQCERHO2jMd_eP36U6WjsoOvy0zWkdY0FKWhqtDbd1z_tqcs",
+    "codeHash": "0x64bb2d4661b5f2dc1a83bf5cbbe09e92ac0b460a1b879a5519386fca4c348bca",
+    "contractName": "NftCollection",
+    "execute": {
+      "action": undefined,
+      "compute": {
+        "type": "skipped",
+      },
+    },
+    "message": {
+      "in": {
+        "bits": 681,
+        "cells": 1,
+      },
+      "out": {
+        "bits": 744,
+        "cells": 2,
+      },
+    },
+    "methodName": "sendDeploy",
+    "opCode": "0x0",
+    "receiver": "internal",
+    "state": {
+      "code": {
+        "bits": 3804,
+        "cells": 20,
+      },
+      "data": {
+        "bits": 4223,
+        "cells": 19,
+      },
+    },
+    "testName": "sdk deploy NFT",
+  },
+  {
+    "address": "EQBPABJHLy9WThhpL5UIiDIrUHWzz6Mjhq96hPP4TuMkGPsk",
+    "codeHash": "0x64bb2d4661b5f2dc1a83bf5cbbe09e92ac0b460a1b879a5519386fca4c348bca",
+    "contractName": "NftCollection",
+    "execute": {
+      "action": {
+        "resultCode": 0,
+        "skippedActions": 0,
+        "success": true,
+        "totalActionFees": 0,
+        "totalActions": 0,
+        "totalFwdFees": undefined,
+        "totalMessageSize": {
+          "bits": 0,
+          "cells": 0,
+        },
+      },
+      "compute": {
+        "exitCode": 0,
+        "gasUsed": 309,
+        "success": true,
+        "type": "vm",
+        "vmSteps": 5,
+      },
+    },
+    "message": {
+      "in": {
+        "bits": 737,
+        "cells": 1,
+      },
+      "out": {
+        "bits": 0,
+        "cells": 0,
+      },
+    },
+    "methodName": "notSupported",
+    "opCode": "0xffffffff",
+    "receiver": "internal",
+    "state": {
+      "code": {
+        "bits": 3804,
+        "cells": 20,
+      },
+      "data": {
+        "bits": 4223,
+        "cells": 19,
+      },
+    },
+    "testName": "sdk deploy NFT",
+  },
+]
+`;

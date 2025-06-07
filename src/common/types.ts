@@ -1,4 +1,4 @@
-import {Address, Cell, Sender, toNano, Transaction} from "@ton/core";
+import { Address, Cell, Sender, toNano, Transaction } from '@ton/core';
 
 export type NotifyOptions = {
     amount?: bigint;
@@ -32,7 +32,10 @@ export function parseNotifyOptions(options: boolean | NotifyOptions | undefined)
     };
 }
 
-export function parseExcessReturnOptions(options: boolean | ReturnOptions | undefined, sender: Sender): ReturnOptions | null {
+export function parseExcessReturnOptions(
+    options: boolean | ReturnOptions | undefined,
+    sender: Sender,
+): ReturnOptions | null {
     if (options === false) {
         return null;
     }
@@ -50,11 +53,11 @@ export function parseExcessReturnOptions(options: boolean | ReturnOptions | unde
 
 export type UnknownMessage = {
     kind: 'unknown';
-}
+};
 
 export type UnknownAction = {
     kind: 'unknown';
     transaction: Transaction;
-}
+};
 
 export type SetKind<T, K> = T & { kind: K };

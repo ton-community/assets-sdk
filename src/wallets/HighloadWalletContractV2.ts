@@ -14,19 +14,19 @@ import {
     SenderArguments,
     SendMode,
     Slice,
-    storeMessageRelaxed
-} from "@ton/core";
-import {Maybe} from "@ton/ton/dist/utils/maybe";
-import {sign} from "@ton/crypto";
-import {sleep} from "../utils";
+    storeMessageRelaxed,
+} from '@ton/core';
+import { Maybe } from '@ton/ton/dist/utils/maybe';
+import { sign } from '@ton/crypto';
+
+import { sleep } from '../utils';
 
 export class HighloadWalletContractV2 implements Contract {
-
     public readonly workchain: number;
     public readonly publicKey: Buffer;
     public readonly address: Address;
     public readonly walletId: number;
-    public readonly init: { code: Cell, data: Cell };
+    public readonly init: { code: Cell; data: Cell };
 
     private constructor(workchain: number, publicKey: Buffer, walletId?: Maybe<number>) {
         this.workchain = workchain;
@@ -38,18 +38,20 @@ export class HighloadWalletContractV2 implements Contract {
         }
 
         // Reference: https://github.com/ton-blockchain/ton/blob/master/crypto/smartcont/highload-wallet-v2-code.fc
-        const code = Cell.fromBase64('te6cckEBCQEA5QABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQHq8oMI1xgg0x/TP/gjqh9TILnyY+1E0NMf0z/T//QE0VNggED0Dm+hMfJgUXO68qIH+QFUEIf5EPKjAvQE0fgAf44WIYAQ9HhvpSCYAtMH1DAB+wCRMuIBs+ZbgyWhyEA0gED0Q4rmMQHIyx8Tyz/L//QAye1UCAAE0DACASAGBwAXvZznaiaGmvmOuF/8AEG+X5dqJoaY+Y6Z/p/5j6AmipEEAgegc30JjJLb/JXdHxQANCCAQPSWb6VsEiCUMFMDud4gkzM2AZJsIeKzn55UWg==');
+        const code = Cell.fromBase64(
+            'te6cckEBCQEA5QABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQHq8oMI1xgg0x/TP/gjqh9TILnyY+1E0NMf0z/T//QE0VNggED0Dm+hMfJgUXO68qIH+QFUEIf5EPKjAvQE0fgAf44WIYAQ9HhvpSCYAtMH1DAB+wCRMuIBs+ZbgyWhyEA0gED0Q4rmMQHIyx8Tyz/L//QAye1UCAAE0DACASAGBwAXvZznaiaGmvmOuF/8AEG+X5dqJoaY+Y6Z/p/5j6AmipEEAgegc30JjJLb/JXdHxQANCCAQPSWb6VsEiCUMFMDud4gkzM2AZJsIeKzn55UWg==',
+        );
         const data = beginCell()
             .storeUint(this.walletId, 32)
             .storeUint(0, 64)
             .storeBuffer(this.publicKey, 32)
             .storeDict(null)
             .endCell();
-        this.init = {code, data};
+        this.init = { code, data };
         this.address = contractAddress(this.workchain, this.init);
     }
 
-    static create(args: { workchain: number, publicKey: Buffer, walletId?: Maybe<number> }) {
+    static create(args: { workchain: number; publicKey: Buffer; walletId?: Maybe<number> }) {
         return new HighloadWalletContractV2(args.workchain, args.publicKey, args.walletId);
     }
 
@@ -71,13 +73,16 @@ export class HighloadWalletContractV2 implements Contract {
     /**
      * Sign and send message.
      */
-    public async sendTransfer(provider: ContractProvider, args: {
-        secretKey: Buffer;
-        messages: MessageRelaxed[];
-        seqno?: Maybe<number>;
-        sendMode?: Maybe<SendMode>;
-        timeout?: Maybe<number>;
-    }) {
+    public async sendTransfer(
+        provider: ContractProvider,
+        args: {
+            secretKey: Buffer;
+            messages: MessageRelaxed[];
+            seqno?: Maybe<number>;
+            sendMode?: Maybe<SendMode>;
+            timeout?: Maybe<number>;
+        },
+    ) {
         const message = this.createTransfer(args);
         await this.send(provider, message);
     }
@@ -113,15 +118,19 @@ export class HighloadWalletContractV2 implements Contract {
             now = args.now;
         }
 
-        return beginCell().store(storeSignedTransferHighloadWalletV2({
-            secretKey: args.secretKey,
-            messages: args.messages,
-            seqno: seqno,
-            sendMode: sendMode,
-            timeout: timeout,
-            walletId: this.walletId,
-            now: now,
-        })).endCell();
+        return beginCell()
+            .store(
+                storeSignedTransferHighloadWalletV2({
+                    secretKey: args.secretKey,
+                    messages: args.messages,
+                    seqno: seqno,
+                    sendMode: sendMode,
+                    timeout: timeout,
+                    walletId: this.walletId,
+                    now: now,
+                }),
+            )
+            .endCell();
     }
 
     /**
@@ -134,21 +143,25 @@ export class HighloadWalletContractV2 implements Contract {
     /**
      * Send signed message and wait for processing.
      */
-    public async sendTransferAndWait(provider: ContractProvider, args: {
-        seqno?: number | null;
-        sendMode?: SendMode | null;
-        secretKey: Buffer;
-        messages: MessageRelaxed[];
-        timeout?: number | null;
-    }, sleepInterval: number = 3000) {
+    public async sendTransferAndWait(
+        provider: ContractProvider,
+        args: {
+            seqno?: number | null;
+            sendMode?: SendMode | null;
+            secretKey: Buffer;
+            messages: MessageRelaxed[];
+            timeout?: number | null;
+        },
+        sleepInterval: number = 3000,
+    ) {
         const transfer = this.createTransfer(args);
-        const {queryId} = this.loadTransfer(transfer.beginParse());
+        const { queryId } = this.loadTransfer(transfer.beginParse());
 
         while (true) {
             try {
                 await provider.external(transfer);
-            } catch (e) {
-            }
+                // eslint-disable-next-line no-empty
+            } catch (_) {}
 
             await sleep(sleepInterval);
             const state = await provider.getState();
@@ -168,7 +181,7 @@ export class HighloadWalletContractV2 implements Contract {
      * Get processed status of message.
      */
     public async getProcessedStatus(provider: ContractProvider, queryId: bigint) {
-        const {stack} = await provider.get('processed?', [{type: 'int', value: queryId}]);
+        const { stack } = await provider.get('processed?', [{ type: 'int', value: queryId }]);
 
         const processedStatus = stack.readBigNumber();
         switch (processedStatus) {
@@ -192,30 +205,31 @@ export class HighloadWalletContractV2 implements Contract {
                 await this.sendTransferAndWait(provider, {
                     secretKey: secretKey,
                     sendMode: args.sendMode,
-                    messages: [internal({
-                        to: args.to,
-                        value: args.value,
-                        bounce: args.bounce,
-                        init: args.init,
-                        body: args.body,
-                    })],
-                })
+                    messages: [
+                        internal({
+                            to: args.to,
+                            value: args.value,
+                            bounce: args.bounce,
+                            init: args.init,
+                            body: args.body,
+                        }),
+                    ],
+                });
             },
             address: this.address,
         };
     }
-
 }
 
 type MessageRelaxedValue = {
     sendMode: SendMode;
     message: MessageRelaxed;
-}
+};
 
 function createMessageRelaxedValue() {
     return {
         serialize: (args: MessageRelaxedValue, builder: Builder) => {
-            const {sendMode, message} = args;
+            const { sendMode, message } = args;
             const messageRelaxed = beginCell().storeWritable(storeMessageRelaxed(message));
 
             builder.storeUint(sendMode, 8);
@@ -224,7 +238,7 @@ function createMessageRelaxedValue() {
         parse: (src: Slice): MessageRelaxedValue => {
             const sendMode = src.loadUint(8);
             const message = loadMessageRelaxed(src.loadRef().beginParse());
-            return {sendMode, message};
+            return { sendMode, message };
         },
     };
 }
@@ -244,24 +258,20 @@ function storeSignedTransferHighloadWalletV2(args: {
     walletId: number;
 }) {
     return (builder: Builder) => {
-        const {secretKey, messages, seqno, sendMode, now, timeout, walletId} = args;
+        const { secretKey, messages, seqno, sendMode, now, timeout, walletId } = args;
         const queryId = getQueryId(now, timeout, seqno);
 
         const dict = Dictionary.empty(Dictionary.Keys.Int(16), createMessageRelaxedValue());
         for (const [i, message] of messages.entries()) {
-            dict.set(i, {sendMode, message});
+            dict.set(i, { sendMode, message });
         }
-        const signedMessage = beginCell()
-            .storeUint(walletId, 32)
-            .storeUint(queryId, 64)
-            .storeDict(dict)
-            .endCell();
+        const signedMessage = beginCell().storeUint(walletId, 32).storeUint(queryId, 64).storeDict(dict).endCell();
         const hash = signedMessage.hash();
         const signature = sign(hash, secretKey);
 
         builder.storeBuffer(signature);
         builder.storeSlice(signedMessage.beginParse());
-    }
+    };
 }
 
 function loadSignedTransferHighloadWalletV2(src: Slice) {

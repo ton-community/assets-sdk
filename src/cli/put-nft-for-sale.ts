@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import {createEnv, printInfo} from './common';
-import {Address, fromNano, toNano} from '@ton/core';
+import { Address, fromNano, toNano } from '@ton/core';
 import inquirer from 'inquirer';
-import {NftSaleData, NftSaleParams} from "../nft/data";
 
+import { createEnv, printInfo } from './common';
+import { NftSaleData, NftSaleParams } from '../nft/data';
 
 type UserInput = {
     nftAddress: Address;
@@ -13,36 +13,43 @@ type UserInput = {
 };
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {item, price, marketplaceFee} = await inquirer.prompt([{
-        name: 'item',
-        message: 'Enter NFT address',
-    }, {
-        name: 'price',
-        message: 'Enter price in TON (eg. 1.5)',
-        mask: '\d+\.?\d*',
-        type: 'number',
-        validate: (value: string) => {
-            const price = parseFloat(value);
-            return price > 0 ? true : 'Price must be a positive number';
-        }
-    }, {
-        name: 'marketplaceFee',
-        message: 'Enter marketplace fee percentage (eg. 5%)',
-        mask: '\d+\.?\d*',
-        default: '5%',
-        type: 'number',
-        validate(input: any) {
-            const fee = parseFloat(input);
-            if (isNaN(fee) || fee < 0 || fee > 100) {
-                return 'Fee must be a number between 0 and 100';
-            }
-            return true;
-        }
-    }]);
+    const { item, price, marketplaceFee } = await inquirer.prompt([
+        {
+            name: 'item',
+            message: 'Enter NFT address',
+        },
+        {
+            name: 'price',
+            message: 'Enter price in TON (eg. 1.5)',
+            mask: /\d+\.?\d*/,
+            type: 'number',
+            validate: (value: string) => {
+                const price = parseFloat(value);
+                return price > 0 ? true : 'Price must be a positive number';
+            },
+        },
+        {
+            name: 'marketplaceFee',
+            message: 'Enter marketplace fee percentage (eg. 5%)',
+            mask: /\d+\.?\d*/,
+            default: '5%',
+            type: 'number',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            validate(input: any) {
+                const fee = parseFloat(input);
+                if (isNaN(fee) || fee < 0 || fee > 100) {
+                    return 'Fee must be a number between 0 and 100';
+                }
+                return true;
+            },
+        },
+    ]);
 
     // converting marketplace fee to fraction
     const marketplaceFeeDenominator = 10000n;
-    const marketplaceFeeNumerator = BigInt(Math.round(parseFloat(marketplaceFee) * Number(marketplaceFeeDenominator) / 100));
+    const marketplaceFeeNumerator = BigInt(
+        Math.round((parseFloat(marketplaceFee) * Number(marketplaceFeeDenominator)) / 100),
+    );
 
     return {
         nftAddress: Address.parse(item),
@@ -105,8 +112,8 @@ async function verifySale(saleData: NftSaleData, saleParams: NftSaleParams) {
 }
 
 export async function main() {
-    const {sdk, network, sender} = await createEnv();
-    const {nftAddress, price, marketplaceFeeNumerator, marketplaceFeeDenominator} = await promptForUserInput();
+    const { sdk, network, sender } = await createEnv();
+    const { nftAddress, price, marketplaceFeeNumerator, marketplaceFeeDenominator } = await promptForUserInput();
 
     const nft = sdk.openNftItem(nftAddress);
 
@@ -122,7 +129,7 @@ export async function main() {
     if (!marketplaceFeeTo) {
         throw new Error(`Sender address is not defined`);
     }
-    const calculatedMarketplaceFee = price * marketplaceFeeNumerator / marketplaceFeeDenominator;
+    const calculatedMarketplaceFee = (price * marketplaceFeeNumerator) / marketplaceFeeDenominator;
 
     const saleParams = {
         nft: nft.address,
@@ -138,7 +145,7 @@ export async function main() {
     await verifySale(saleData, saleParams);
 
     await nft.send(sender, sale.address);
-    const {nftOwner: seller} = await sale.getData();
+    const { nftOwner: seller } = await sale.getData();
 
     const saleInfo = {
         name: 'Created NFT sale',

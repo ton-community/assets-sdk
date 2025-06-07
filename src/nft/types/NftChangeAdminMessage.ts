@@ -1,9 +1,10 @@
-import {Address, Builder, Slice} from "@ton/core";
-import {NFT_CHANGE_ADMIN_OPCODE} from "../opcodes";
+import { Address, Builder, Slice } from '@ton/core';
+
+import { NFT_CHANGE_ADMIN_OPCODE } from '../opcodes';
 
 export type NftChangeAdminMessage = {
-    queryId: bigint
-    newAdmin: Address,
+    queryId: bigint;
+    newAdmin: Address;
 };
 
 export function storeNftChangeAdminMessage(src: NftChangeAdminMessage): (builder: Builder) => void {

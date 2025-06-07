@@ -1,5 +1,6 @@
-import {Address, Builder, Slice} from "@ton/core";
-import {NFT_REPORT_STATIC_DATA_OPCODE} from "../opcodes";
+import { Address, Builder, Slice } from '@ton/core';
+
+import { NFT_REPORT_STATIC_DATA_OPCODE } from '../opcodes';
 
 // report_static_data#8b771735 query_id:uint64 index:uint256 collection:MsgAddress = InternalMsgBody;
 export type NftReportStaticDataMessage = {
@@ -10,8 +11,9 @@ export type NftReportStaticDataMessage = {
 
 export function storeNftReportStaticDataMessage(message: NftReportStaticDataMessage): (builder: Builder) => void {
     return (builder) => {
-        const {queryId, index, collection} = message;
-        builder.storeUint(NFT_REPORT_STATIC_DATA_OPCODE, 32)
+        const { queryId, index, collection } = message;
+        builder
+            .storeUint(NFT_REPORT_STATIC_DATA_OPCODE, 32)
             .storeUint(queryId, 64)
             .storeUint(index, 256)
             .storeAddress(collection);

@@ -1,15 +1,19 @@
-import {beginCell, Builder, Slice} from "@ton/core";
-import {NFT_MINT_OPCODE} from "../opcodes";
-import {LoadParams, StoreParams} from "../../common/types/ParamsValue";
+import { beginCell, Builder, Slice } from '@ton/core';
+
+import { NFT_MINT_OPCODE } from '../opcodes';
+import { LoadParams, StoreParams } from '../../common/types/ParamsValue';
 
 export type NftMintMessage<T> = {
-    itemIndex: bigint,
-    value: bigint,
-    itemParams: T,
-    queryId: bigint,
-}
+    itemIndex: bigint;
+    value: bigint;
+    itemParams: T;
+    queryId: bigint;
+};
 
-export function storeNftMintMessage<T>(src: NftMintMessage<T>, storeParams: StoreParams<T>): (builder: Builder) => void {
+export function storeNftMintMessage<T>(
+    src: NftMintMessage<T>,
+    storeParams: StoreParams<T>,
+): (builder: Builder) => void {
     return (builder: Builder) => {
         builder.storeUint(NFT_MINT_OPCODE, 32);
         builder.storeUint(src.queryId, 64);

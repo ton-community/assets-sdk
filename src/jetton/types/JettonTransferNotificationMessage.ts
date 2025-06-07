@@ -1,5 +1,6 @@
-import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {JETTON_TRANSFER_NOTIFICATION_OPCODE} from "../opcodes";
+import { Address, Builder, Cell, Slice } from '@ton/core';
+
+import { JETTON_TRANSFER_NOTIFICATION_OPCODE } from '../opcodes';
 
 // transfer_notification#7362d09c query_id:uint64 amount:(VarUInteger 16)
 //                               sender:MsgAddress forward_payload:(Either Cell ^Cell)
@@ -9,16 +10,18 @@ export type JettonTransferNotificationMessage = {
     amount: bigint;
     sender: Address;
     forwardPayload: Cell | null;
-}
+};
 
-export function storeJettonTransferNotificationMessage(src: JettonTransferNotificationMessage): (builder: Builder) => void {
+export function storeJettonTransferNotificationMessage(
+    src: JettonTransferNotificationMessage,
+): (builder: Builder) => void {
     return (builder: Builder) => {
         builder.storeUint(JETTON_TRANSFER_NOTIFICATION_OPCODE, 32);
         builder.storeUint(src.queryId, 64);
         builder.storeCoins(src.amount);
         builder.storeAddress(src.sender);
         builder.storeMaybeRef(src.forwardPayload);
-    }
+    };
 }
 
 export function loadJettonTransferNotificationMessage(slice: Slice): JettonTransferNotificationMessage {
@@ -36,6 +39,6 @@ export function loadJettonTransferNotificationMessage(slice: Slice): JettonTrans
         queryId,
         amount,
         sender,
-        forwardPayload
+        forwardPayload,
     };
 }

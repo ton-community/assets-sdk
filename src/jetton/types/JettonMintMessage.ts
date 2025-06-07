@@ -1,18 +1,18 @@
-import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {JETTON_MINT_OPCODE} from "../opcodes";
+import { Address, beginCell, Builder, Cell, Slice } from '@ton/core';
 
-import {loadJettonInternalTransferMessage, storeJettonInternalTransferMessage} from "./JettonInternalTransferMessage";
+import { JETTON_MINT_OPCODE } from '../opcodes';
+import { loadJettonInternalTransferMessage, storeJettonInternalTransferMessage } from './JettonInternalTransferMessage';
 
 export type JettonMintMessage = {
-    queryId: bigint,
-    amount: bigint,
-    from: Address,
-    to: Address,
-    responseAddress: Address | null,
-    forwardPayload: Cell | null,
+    queryId: bigint;
+    amount: bigint;
+    from: Address;
+    to: Address;
+    responseAddress: Address | null;
+    forwardPayload: Cell | null;
     forwardTonAmount: bigint;
     walletForwardValue: bigint;
-}
+};
 
 export function storeJettonMintMessage(src: JettonMintMessage) {
     return (builder: Builder) => {
@@ -21,7 +21,7 @@ export function storeJettonMintMessage(src: JettonMintMessage) {
         builder.storeAddress(src.to);
         builder.storeCoins(src.walletForwardValue);
         builder.storeRef(beginCell().store(storeJettonInternalTransferMessage(src)).endCell());
-    }
+    };
 }
 
 export function loadJettonMintMessage(slice: Slice): JettonMintMessage {
@@ -43,5 +43,5 @@ export function loadJettonMintMessage(slice: Slice): JettonMintMessage {
         forwardTonAmount: internalTransfer.forwardTonAmount,
         forwardPayload: internalTransfer.forwardPayload,
         walletForwardValue,
-    }
+    };
 }

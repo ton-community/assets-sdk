@@ -1,17 +1,18 @@
-import {Dictionary} from "@ton/core";
-import z from "zod";
-import {bufferToStr, DecodedContent, decodeImage, decodeSimpleFields, ParsedContent} from "../content";
+import { Dictionary } from '@ton/core';
+import z from 'zod';
+
+import { bufferToStr, DecodedContent, decodeImage, decodeSimpleFields, ParsedContent } from '../content';
 
 export interface JettonContent {
-    uri?: string,
-    name?: string,
-    description?: string,
-    image?: string,
-    imageData?: Buffer,
-    symbol?: string,
-    decimals?: number,
-    amountStyle?: 'n' | 'n-of-total' | '%',
-    renderType?: 'currency' | 'game',
+    uri?: string;
+    name?: string;
+    description?: string;
+    image?: string;
+    imageData?: Buffer;
+    symbol?: string;
+    decimals?: number;
+    amountStyle?: 'n' | 'n-of-total' | '%';
+    renderType?: 'currency' | 'game';
 }
 
 export function jettonContentToInternal(content: JettonContent) {
@@ -29,13 +30,13 @@ export function jettonContentToInternal(content: JettonContent) {
 }
 
 export type ParsedJettonContent = {
-    name?: string,
-    description?: string,
-    image?: string | Buffer,
-    symbol?: string,
-    decimals?: number,
-    amount_style?: 'n' | 'n-of-total' | '%',
-    render_type?: 'currency' | 'game',
+    name?: string;
+    description?: string;
+    image?: string | Buffer;
+    symbol?: string;
+    decimals?: number;
+    amount_style?: 'n' | 'n-of-total' | '%';
+    render_type?: 'currency' | 'game';
 };
 
 export function parseJettonContent(dc: DecodedContent): ParsedContent<ParsedJettonContent> {
@@ -54,7 +55,11 @@ export function parseJettonContent(dc: DecodedContent): ParsedContent<ParsedJett
         },
         decimals: {
             onchain: (v: Buffer) => parseInt(bufferToStr(v)),
-            offchain: (v: unknown) => z.union([z.string(), z.number()]).transform(v => Number(v)).parse(v),
+            offchain: (v: unknown) =>
+                z
+                    .union([z.string(), z.number()])
+                    .transform((v) => Number(v))
+                    .parse(v),
         },
         amount_style: {
             onchain: (v: Buffer) => {

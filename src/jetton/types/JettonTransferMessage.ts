@@ -1,5 +1,6 @@
-import {Address, Builder, Cell, Slice} from "@ton/core";
-import {JETTON_TRANSFER_OPCODE} from "../opcodes";
+import { Address, Builder, Cell, Slice } from '@ton/core';
+
+import { JETTON_TRANSFER_OPCODE } from '../opcodes';
 
 // transfer#0f8a7ea5 query_id:uint64 amount:(VarUInteger 16) destination:MsgAddress
 //                  response_destination:MsgAddress custom_payload:(Maybe ^Cell)

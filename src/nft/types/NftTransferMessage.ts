@@ -1,5 +1,6 @@
-import {Address, Builder, Cell, Slice} from "@ton/core";
-import {NFT_TRANSFER_OPCODE} from "../opcodes";
+import { Address, Builder, Cell, Slice } from '@ton/core';
+
+import { NFT_TRANSFER_OPCODE } from '../opcodes';
 
 // transfer query_id:uint64 new_owner:MsgAddress response_destination:MsgAddress custom_payload:(Maybe ^Cell)
 //          forward_amount:(VarUInteger 16) forward_payload:(Either Cell ^Cell)  = InternalMsgBody;
@@ -14,8 +15,9 @@ export type NftTransferMessage = {
 
 export function storeNftTransferMessage(message: NftTransferMessage): (builder: Builder) => void {
     return (builder) => {
-        const {queryId, newOwner, responseDestination, customPayload, forwardAmount, forwardPayload} = message;
-        builder.storeUint(NFT_TRANSFER_OPCODE, 32)
+        const { queryId, newOwner, responseDestination, customPayload, forwardAmount, forwardPayload } = message;
+        builder
+            .storeUint(NFT_TRANSFER_OPCODE, 32)
             .storeUint(queryId, 64)
             .storeAddress(newOwner)
             .storeAddress(responseDestination)

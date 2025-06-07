@@ -1,9 +1,9 @@
-import {Address, Builder, Slice} from "@ton/core";
+import { Address, Builder, Slice } from '@ton/core';
 
 export type NftRoyaltyParams = {
-    numerator: bigint,
-    denominator: bigint,
-    recipient: Address,
+    numerator: bigint;
+    denominator: bigint;
+    recipient: Address;
 };
 
 export function storeNftRoyaltyParams(src: NftRoyaltyParams) {

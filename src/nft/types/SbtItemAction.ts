@@ -1,7 +1,8 @@
-import {Address, Cell, Transaction} from "@ton/core";
-import {loadNftMessage} from "./NftMessage";
-import {UnknownAction} from "../../common/types";
-import {parseTransferTransaction, TransferAction} from "../../common/types/TransferAction";
+import { Address, Cell, Transaction } from '@ton/core';
+
+import { loadNftMessage } from './NftMessage';
+import { UnknownAction } from '../../common/types';
+import { parseTransferTransaction, TransferAction } from '../../common/types/TransferAction';
 
 export type SbtDeployAction = {
     kind: 'sbt_deploy';
@@ -9,11 +10,8 @@ export type SbtDeployAction = {
     content: Cell;
     collection: Address;
     transaction: Transaction;
-}
-export type SbtItemAction =
-    | SbtDeployAction
-    | TransferAction
-    | UnknownAction;
+};
+export type SbtItemAction = SbtDeployAction | TransferAction | UnknownAction;
 
 export function parseSbtItemTransaction(tx: Transaction): SbtItemAction {
     const mayBeTransfer = parseTransferTransaction(tx);
@@ -22,19 +20,19 @@ export function parseSbtItemTransaction(tx: Transaction): SbtItemAction {
     }
 
     if (tx.description.type !== 'generic') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (!tx.inMessage) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.inMessage.info.type !== 'internal') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.description.computePhase.type !== 'vm') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.description.computePhase.exitCode !== 0) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
 
     const inMessage = loadNftMessage(tx.inMessage.body.beginParse());
@@ -49,5 +47,5 @@ export function parseSbtItemTransaction(tx: Transaction): SbtItemAction {
         };
     }
 
-    return {kind: 'unknown', transaction: tx};
+    return { kind: 'unknown', transaction: tx };
 }

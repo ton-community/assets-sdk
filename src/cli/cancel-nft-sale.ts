@@ -1,17 +1,20 @@
 import 'dotenv/config';
-import {createEnv, formatAddress, printInfo} from './common';
-import {Address, fromNano, toNano} from '@ton/core';
+import { Address, fromNano } from '@ton/core';
 import inquirer from 'inquirer';
+
+import { createEnv, formatAddress, printInfo } from './common';
 
 type UserInput = {
     nftAddress: Address;
 };
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {item} = await inquirer.prompt([{
-        name: 'item',
-        message: 'Enter NFT address',
-    }]);
+    const { item } = await inquirer.prompt([
+        {
+            name: 'item',
+            message: 'Enter NFT address',
+        },
+    ]);
 
     return {
         nftAddress: Address.parse(item),
@@ -19,11 +22,11 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network, sender} = await createEnv();
-    const {nftAddress} = await promptForUserInput();
+    const { sdk, network, sender } = await createEnv();
+    const { nftAddress } = await promptForUserInput();
 
     const nft = sdk.openNftItem(nftAddress);
-    const {owner} = await nft.getData();
+    const { owner } = await nft.getData();
     if (!owner) {
         throw new Error(`NFT ${formatAddress(nftAddress, network)} is not owned`);
     }
@@ -43,11 +46,13 @@ export async function main() {
     };
     printInfo(saleInfo, network);
 
-    const {confirm} = await inquirer.prompt([{
-        name: 'confirm',
-        message: 'Do you want to cancel sale?',
-        type: 'confirm',
-    }]);
+    const { confirm } = await inquirer.prompt([
+        {
+            name: 'confirm',
+            message: 'Do you want to cancel sale?',
+            type: 'confirm',
+        },
+    ]);
     if (!confirm) {
         return;
     }

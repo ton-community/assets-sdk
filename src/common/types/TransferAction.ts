@@ -1,48 +1,45 @@
-import {Address, Transaction} from "@ton/core";
-import {UnknownAction} from "../types";
-import {loadTransferMessage} from "./TransferMessage";
+import { Address, Transaction } from '@ton/core';
+
+import { UnknownAction } from '../types';
+import { loadTransferMessage } from './TransferMessage';
 
 export type SimpleTransferAction = {
-    kind: 'simple_transfer',
-    from: Address,
-    to: Address,
-    amount: bigint,
-    transaction: Transaction,
+    kind: 'simple_transfer';
+    from: Address;
+    to: Address;
+    amount: bigint;
+    transaction: Transaction;
 };
 
 export type TextAction = {
-    kind: 'text_message',
-    from: Address,
-    to: Address,
-    amount: bigint,
-    text: string,
-    transaction: Transaction,
+    kind: 'text_message';
+    from: Address;
+    to: Address;
+    amount: bigint;
+    text: string;
+    transaction: Transaction;
 };
 
 export type EncryptedAction = {
-    kind: 'encrypted_message',
-    from: Address,
-    to: Address,
-    amount: bigint,
-    data: Buffer,
-    transaction: Transaction,
+    kind: 'encrypted_message';
+    from: Address;
+    to: Address;
+    amount: bigint;
+    data: Buffer;
+    transaction: Transaction;
 };
 
-export type TransferAction =
-    | SimpleTransferAction
-    | TextAction
-    | EncryptedAction
-    | UnknownAction;
+export type TransferAction = SimpleTransferAction | TextAction | EncryptedAction | UnknownAction;
 
 export function parseTransferTransaction(tx: Transaction): TransferAction {
     if (tx.description.type !== 'generic') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (!tx.inMessage) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.inMessage.info.type !== 'internal') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
 
     const body = tx.inMessage.body.beginParse();
@@ -80,5 +77,5 @@ export function parseTransferTransaction(tx: Transaction): TransferAction {
         };
     }
 
-    return {kind: 'unknown', transaction: tx};
+    return { kind: 'unknown', transaction: tx };
 }

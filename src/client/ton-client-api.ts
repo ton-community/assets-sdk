@@ -1,12 +1,11 @@
-import {Address, Cell, Contract, ContractProvider, OpenedContract} from "@ton/core";
-import {TonClient4} from "@ton/ton";
-import {getHttpV4Endpoint} from "@orbs-network/ton-access";
+import { Address, Cell, Contract, ContractProvider, OpenedContract } from '@ton/core';
+import { TonClient4 } from '@ton/ton';
+import { getHttpV4Endpoint } from '@orbs-network/ton-access';
 
 /**
  * The TonClientApi interface provides a way to interact with the TON network
  */
 export interface TonClientApi {
-
     /**
      * Open a contract
      * @param contract - The contract to open
@@ -18,7 +17,7 @@ export interface TonClientApi {
      * @param address - The address of the contract
      * @param init - The initial state of the contract
      */
-    provider(address: Address, init?: { code: Cell; data: Cell; } | null | undefined): ContractProvider;
+    provider(address: Address, init?: { code: Cell; data: Cell } | null | undefined): ContractProvider;
 }
 
 /**
@@ -26,6 +25,6 @@ export interface TonClientApi {
  * @param network - The network to connect to (testnet or mainnet)
  */
 export async function createApi(network: 'testnet' | 'mainnet'): Promise<TonClientApi> {
-    const endpoint = await getHttpV4Endpoint({network: network});
-    return new TonClient4({ endpoint: endpoint, timeout: 15000 })
+    const endpoint = await getHttpV4Endpoint({ network: network });
+    return new TonClient4({ endpoint: endpoint, timeout: 15000 });
 }
