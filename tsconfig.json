@@ -9,6 +9,9 @@
         "strict": true,
         "skipLibCheck": true
     },
+    "exclude": [
+        "**/*.spec.ts",
+    ],
     "include": [
         "src/**/*"
     ]

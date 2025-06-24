@@ -1,6 +1,7 @@
-import {Address, fromNano, toNano} from "@ton/core";
-import {createEnv, printInfo} from "./common";
+import { Address, fromNano, toNano } from '@ton/core';
 import inquirer from 'inquirer';
+
+import { createEnv, printInfo } from './common';
 
 type UserInput = {
     recipient: Address;
@@ -8,18 +9,21 @@ type UserInput = {
 };
 
 async function promptTonTransfer(): Promise<UserInput> {
-    const {recipient, amount} = await inquirer.prompt([{
-        name: 'recipient',
-        message: 'Enter recipient address',
-    }, {
-        name: 'amount',
-        type: 'number',
-        message: 'Enter amount in TON (eg. 1.5)',
-        validate: (input: string) => {
-            const amount = toNano(input);
-            return amount > 0 ? true : 'Price must be a positive number';
+    const { recipient, amount } = await inquirer.prompt([
+        {
+            name: 'recipient',
+            message: 'Enter recipient address',
         },
-    }]);
+        {
+            name: 'amount',
+            type: 'number',
+            message: 'Enter amount in TON (eg. 1.5)',
+            validate: (input: string) => {
+                const amount = toNano(input);
+                return amount > 0 ? true : 'Price must be a positive number';
+            },
+        },
+    ]);
 
     return {
         recipient: Address.parse(recipient),
@@ -28,10 +32,10 @@ async function promptTonTransfer(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
-    const {recipient, amount} = await promptTonTransfer();
+    const { sdk, network } = await createEnv();
+    const { recipient, amount } = await promptTonTransfer();
 
-    await sdk.sender?.send({to: recipient, value: amount});
+    await sdk.sender?.send({ to: recipient, value: amount });
 
     const tonTransferInfo = {
         name: 'Transfer TON',

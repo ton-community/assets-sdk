@@ -1,16 +1,19 @@
-import {createEnv, printInfo} from "./common";
-import {Address} from "@ton/core";
-import inquirer from "inquirer";
+import { Address } from '@ton/core';
+import inquirer from 'inquirer';
+
+import { createEnv, printInfo } from './common';
 
 type UserInput = {
     collectionAddress: Address;
-}
+};
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {collection} = await inquirer.prompt([{
-        name: 'collection',
-        message: 'Enter collection address',
-    }]);
+    const { collection } = await inquirer.prompt([
+        {
+            name: 'collection',
+            message: 'Enter collection address',
+        },
+    ]);
 
     return {
         collectionAddress: Address.parse(collection),
@@ -18,8 +21,8 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
-    const {collectionAddress} = await promptForUserInput();
+    const { sdk, network } = await createEnv();
+    const { collectionAddress } = await promptForUserInput();
 
     const collection = sdk.openNftCollection(collectionAddress);
     const collectionData = await collection.getData();

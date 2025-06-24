@@ -14,6 +14,9 @@
         "chalk": false
     },
     "scripts": {
+        "lint": "eslint . --max-warnings 0",
+        "lint:fix": "eslint . --max-warnings 0 --fix",
+        "test": "jest src",
         "build": "npm run clean && npm run compile && tsc",
         "clean": "rimraf ./dist",
         "compile": "ts-node ./src/jetton/contracts/compile.ts && ts-node ./src/nft/contracts/compile.ts",
@@ -23,6 +26,7 @@
     "files": [
         "dist/**/*"
     ],
+    "prettier": "@ton/toolchain/prettier",
     "dependencies": {
         "@aws-sdk/client-s3": "^3.423.0",
         "@orbs-network/ton-access": "^2.3.3",
@@ -42,7 +46,10 @@
         "@ton-community/func-js": "0.6.3",
         "@ton/core": "^0.56.0",
         "@ton/crypto": "^3.2.0",
+        "@ton/sandbox": "^0.32.1",
+        "@ton/test-utils": "^0.7.0",
         "@ton/ton": "^13.11.0",
+        "@ton/toolchain": "the-ton-tech/toolchain#v1.4.0",
         "@types/inquirer": "^9.0.7",
         "@types/jest": "^29.5.12",
         "@types/node": "^20.3.2",
@@ -62,5 +69,6 @@
     "homepage": "https://github.com/ton-community/assets-sdk",
     "bugs": {
         "url": "https://github.com/ton-community/assets-sdk/issues"
-    }
+    },
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

@@ -1,5 +1,6 @@
-import {Address, toNano} from "@ton/core";
-import {AssetsSDK, createApi, createSender, importKey, PinataStorageParams} from "../src";
+import { Address, toNano } from '@ton/core';
+
+import { AssetsSDK, createApi, createSender, importKey, PinataStorageParams } from '../src';
 
 async function main() {
     const NETWORK = 'testnet';
@@ -11,7 +12,7 @@ async function main() {
     const storage: PinataStorageParams = {
         pinataApiKey: process.env.PINATA_API_KEY!,
         pinataSecretKey: process.env.PINATA_SECRET!,
-    }
+    };
 
     const sdk = AssetsSDK.create({
         api: api,
@@ -19,6 +20,7 @@ async function main() {
         sender: sender,
     });
 
+    // eslint-disable-next-line no-console
     console.log('Using wallet', sdk.sender?.address);
 
     const JETTON_ADDRESS = Address.parse('MY_JETTON_ADDRESS');
@@ -29,4 +31,5 @@ async function main() {
     await myJettonWallet.send(sender, RECEIVER_ADDRESS, toNano(10));
 }
 
+// eslint-disable-next-line no-console
 main().catch(console.error);

@@ -1,5 +1,6 @@
-import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {ParamsValue} from "../../common/types/ParamsValue";
+import { Address, beginCell, Builder, Cell, Slice } from '@ton/core';
+
+import { ParamsValue } from '../../common/types/ParamsValue';
 
 export type NftItemParams = {
     owner: Address;

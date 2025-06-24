@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 
 import 'dotenv/config';
-import {main as cancelNftSale} from './cancel-nft-sale';
-import {main as deployJetton} from './deploy-jetton';
-import {main as deployNftCollection} from './deploy-nft-collection';
-import {main as getWalletState} from './get-wallet-state';
-import {main as getJetton} from './get-jetton';
-import {main as getJettonBalance} from './get-jetton-balance';
-import {main as getNftCollection} from './get-nft-collection';
-import {main as getNftCollectionItem} from './get-nft-collection-item';
-import {main as getNftCollectionItems} from './get-nft-collection-items';
-import {main as getNftItem} from './get-nft-item';
-import {main as getNftSale} from './get-nft-sale';
-import {main as mintJetton} from './mint-jetton';
-import {main as mintNft} from './mint-nft';
-import {main as mintSbt} from './mint-sbt';
-import {main as putNftForSale} from './put-nft-for-sale';
-import {main as setupEnv} from './setup-env';
-import {main as transferJetton} from './transfer-jetton';
-import {main as transferNft} from './transfer-nft';
-import {main as transferTon} from './transfer-ton';
+import { main as cancelNftSale } from './cancel-nft-sale';
+import { main as deployJetton } from './deploy-jetton';
+import { main as deployNftCollection } from './deploy-nft-collection';
+import { main as getWalletState } from './get-wallet-state';
+import { main as getJetton } from './get-jetton';
+import { main as getJettonBalance } from './get-jetton-balance';
+import { main as getNftCollection } from './get-nft-collection';
+import { main as getNftCollectionItem } from './get-nft-collection-item';
+import { main as getNftCollectionItems } from './get-nft-collection-items';
+import { main as getNftItem } from './get-nft-item';
+import { main as getNftSale } from './get-nft-sale';
+import { main as mintJetton } from './mint-jetton';
+import { main as mintNft } from './mint-nft';
+import { main as mintSbt } from './mint-sbt';
+import { main as putNftForSale } from './put-nft-for-sale';
+import { main as setupEnv } from './setup-env';
+import { main as transferJetton } from './transfer-jetton';
+import { main as transferNft } from './transfer-nft';
+import { main as transferTon } from './transfer-ton';
 
 const commands = {
     'setup-env': {
@@ -98,13 +98,19 @@ const commands = {
         main: transferTon,
         description: 'Transfer TON to another wallet',
     },
-}
+};
 
 function help() {
+    // eslint-disable-next-line no-console
     console.log(`Usage: assets-cli <command>\nCommands:`);
     for (let cmd in commands) {
         const commandInfo = commands[cmd as keyof typeof commands];
-        console.log(`  - ${cmd} ${Array(30 - cmd.length).fill(' ').join('')}${commandInfo.description}`);
+        // eslint-disable-next-line no-console
+        console.log(
+            `  - ${cmd} ${Array(30 - cmd.length)
+                .fill(' ')
+                .join('')}${commandInfo.description}`,
+        );
     }
 }
 
@@ -118,6 +124,7 @@ if (!command) {
 const commandInfo = commands[command];
 if (commandInfo) {
     commandInfo.main().catch((e: Error) => {
+        // eslint-disable-next-line no-console
         console.error(e);
         process.exit(1);
     });

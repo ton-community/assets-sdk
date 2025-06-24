@@ -1,16 +1,19 @@
-import {createEnv, formatAddress, printInfo} from "./common";
-import {Address, fromNano} from "@ton/core";
-import inquirer from "inquirer";
+import { Address, fromNano } from '@ton/core';
+import inquirer from 'inquirer';
+
+import { createEnv, formatAddress, printInfo } from './common';
 
 type UserInput = {
     nftAddress: Address;
-}
+};
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {item} = await inquirer.prompt([{
-        name: 'item',
-        message: 'Enter NFT item address',
-    }]);
+    const { item } = await inquirer.prompt([
+        {
+            name: 'item',
+            message: 'Enter NFT item address',
+        },
+    ]);
 
     return {
         nftAddress: Address.parse(item),
@@ -18,11 +21,11 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
-    const {nftAddress} = await promptForUserInput();
+    const { sdk, network } = await createEnv();
+    const { nftAddress } = await promptForUserInput();
 
     const nft = sdk.openNftItem(nftAddress);
-    const {owner} = await nft.getData();
+    const { owner } = await nft.getData();
     if (!owner) {
         throw new Error(`NFT ${formatAddress(nftAddress, network)} is not owned`);
     }

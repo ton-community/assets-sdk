@@ -1,8 +1,9 @@
-import {Address, Cell} from "@ton/core";
-import {AssetsSDK, createApi, createWallet, importKey, PinataStorage, S3Storage} from "..";
-import {DefaultContentResolver} from "../content";
-import chalk from "chalk";
-import boxen from "boxen";
+import { Address, Cell } from '@ton/core';
+import chalk from 'chalk';
+import boxen from 'boxen';
+
+import { AssetsSDK, createApi, createWallet, importKey, PinataStorage, S3Storage } from '..';
+import { DefaultContentResolver } from '../content';
 
 export function createStorageEnv() {
     if (process.env.STORAGE_TYPE === undefined) throw new Error('No STORAGE_TYPE in env!');
@@ -60,13 +61,14 @@ export async function createEnv() {
     if (process.env.WALLET_TYPE !== 'highload-v2') throw new Error(`Unknown wallet type: ${process.env.WALLET_TYPE}`);
     if (process.env.MNEMONIC === undefined) throw new Error('No MNEMONIC in env!');
     if (process.env.NETWORK === undefined) throw new Error('No NETWORK in env!');
-    if (process.env.NETWORK !== 'mainnet' && process.env.NETWORK !== 'testnet') throw new Error(`Unknown network: ${process.env.NETWORK}`);
+    if (process.env.NETWORK !== 'mainnet' && process.env.NETWORK !== 'testnet')
+        throw new Error(`Unknown network: ${process.env.NETWORK}`);
 
     const contentResolver = createContentResolver();
     const storage = createStorageEnv();
     const client = await createApi(process.env.NETWORK);
     const keyPair = await importKey(process.env.MNEMONIC);
-    const {publicKey, secretKey} = keyPair;
+    const { publicKey } = keyPair;
 
     const walletContract = await createWallet(process.env.WALLET_TYPE, publicKey);
     const sender = client.open(walletContract).sender(keyPair.secretKey);
@@ -75,7 +77,7 @@ export async function createEnv() {
         storage,
         api: client,
         sender: sender,
-        contentResolver
+        contentResolver,
     });
 
     return {
@@ -87,7 +89,10 @@ export async function createEnv() {
     };
 }
 
-export function printInfo(info: Record<string, Cell | Address | string | number | bigint | boolean | null | undefined>, network: string): void {
+export function printInfo(
+    info: Record<string, Cell | Address | string | number | bigint | boolean | null | undefined>,
+    network: string,
+): void {
     const keys = Object.keys(info);
     const rows = [];
     for (const key of keys) {
@@ -114,26 +119,33 @@ export function printInfo(info: Record<string, Cell | Address | string | number 
         rows.push([key, value]);
     }
 
-    console.log(boxen(
-        rows.filter(([key]) => key !== 'name').map(([key, value]) => `${chalk.bold(key)}: ${value}`).join('\n'),
-        {
-            padding: {
-                top: 0,
-                bottom: 0,
-                left: 1,
-                right: 1,
+    // eslint-disable-next-line no-console
+    console.log(
+        boxen(
+            rows
+                .filter(([key]) => key !== 'name')
+                .map(([key, value]) => `${chalk.bold(key)}: ${value}`)
+                .join('\n'),
+            {
+                padding: {
+                    top: 0,
+                    bottom: 0,
+                    left: 1,
+                    right: 1,
+                },
+                borderStyle: 'round',
+                borderColor: 'green',
+                title: rows.find(([key, _value]) => key === 'name')?.[1] as string | undefined,
             },
-            borderStyle: 'round',
-            borderColor: 'green',
-            title: rows.find(([key, value]) => key === 'name')?.[1] as string | undefined,
-        }
-    ));
+        ),
+    );
 }
 
 export function printAddress(address: Address | null, network: string, name = 'wallet'): void {
     const formattedAddress = formatAddress(address, network);
     const formattedAddressLink = formatAddressLink(address, network);
 
+    // eslint-disable-next-line no-console
     console.log(`Your ${name} has the address ${formattedAddress}
 You can view it at ${formattedAddressLink}`);
 }
@@ -143,7 +155,7 @@ export function formatAddress(address: Address | null | undefined, network: stri
         return 'null';
     }
 
-    return address.toString({testOnly: network === 'testnet', bounceable: true});
+    return address.toString({ testOnly: network === 'testnet', bounceable: true });
 }
 
 export function formatAddressLink(address: Address | null | void, network: string): string {
@@ -154,15 +166,19 @@ export function formatAddressLink(address: Address | null | void, network: strin
     return `https://${network === 'testnet' ? 'testnet.' : ''}tonviewer.com/${formatAddress(address, network)}`;
 }
 
-export async function retry<T>(fn: () => Promise<T>, options?: { name?: string, retries?: number, delay?: number }): Promise<T> {
+export async function retry<T>(
+    fn: () => Promise<T>,
+    options?: { name?: string; retries?: number; delay?: number },
+): Promise<T> {
     let { retries, delay, name } = { retries: 3, delay: 1000, ...options };
     for (let i = 0; i < retries; i++) {
         try {
             return await fn();
         } catch (e) {
+            // eslint-disable-next-line no-console
             console.log(`Attempt ${i + 1} failed: ${name ? name + ': ' : ''}${e}`);
         }
-        await new Promise(resolve => setTimeout(resolve, delay * 2 ** i));
+        await new Promise((resolve) => setTimeout(resolve, delay * 2 ** i));
     }
     throw new Error('Exceeded number of retries');
 }

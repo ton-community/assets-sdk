@@ -1,15 +1,22 @@
-import {beginCell, Builder, Dictionary, DictionaryValue, Slice, toNano} from "@ton/core";
-import {NFT_BATCH_MINT_OPCODE} from "../opcodes";
-import {LoadParams, StoreParams} from "../../common/types/ParamsValue";
+import { beginCell, Builder, Dictionary, DictionaryValue, Slice, toNano } from '@ton/core';
+
+import { NFT_BATCH_MINT_OPCODE } from '../opcodes';
+import { LoadParams, StoreParams } from '../../common/types/ParamsValue';
 
 export type NftBatchMintMessage<T> = {
-    queryId: bigint,
-    requests: NftMintItem<T>[],
-}
+    queryId: bigint;
+    requests: NftMintItem<T>[];
+};
 
-export function storeNftBatchMintMessage<T>(src: NftBatchMintMessage<T>, storeParams: StoreParams<T>): (builder: Builder) => void {
+export function storeNftBatchMintMessage<T>(
+    src: NftBatchMintMessage<T>,
+    storeParams: StoreParams<T>,
+): (builder: Builder) => void {
     return (builder: Builder) => {
-        const dict: Dictionary<bigint, NftMintItem<T>> = Dictionary.empty(Dictionary.Keys.BigUint(64), createNftMintItemValue(storeParams));
+        const dict: Dictionary<bigint, NftMintItem<T>> = Dictionary.empty(
+            Dictionary.Keys.BigUint(64),
+            createNftMintItemValue(storeParams),
+        );
         for (const r of src.requests) {
             if (dict.has(r.index)) {
                 throw new Error('Duplicate items');
@@ -29,10 +36,7 @@ export function loadNftBatchMintMessage<T>(slice: Slice, loadParams: LoadParams<
     }
 
     const queryId = slice.loadUintBig(64);
-    const requests = slice.loadDictDirect(
-        Dictionary.Keys.BigUint(64),
-        createNftMintItemValue(undefined, loadParams)
-    );
+    const requests = slice.loadDictDirect(Dictionary.Keys.BigUint(64), createNftMintItemValue(undefined, loadParams));
     return {
         queryId: queryId,
         requests: requests.values(),
@@ -40,16 +44,19 @@ export function loadNftBatchMintMessage<T>(slice: Slice, loadParams: LoadParams<
 }
 
 export type NftMintItem<T> = {
-    index: bigint,
-    params: T,
-    value?: bigint,
-}
+    index: bigint;
+    params: T;
+    value?: bigint;
+};
 export type NftMintItemParams<T> = {
-    index: bigint,
-    value?: bigint,
+    index: bigint;
+    value?: bigint;
 } & T;
 
-export function storeNftBatchMintItem<T>(request: NftMintItem<T>, storeParams: StoreParams<T>): (builder: Builder) => void {
+export function storeNftBatchMintItem<T>(
+    request: NftMintItem<T>,
+    storeParams: StoreParams<T>,
+): (builder: Builder) => void {
     return (builder: Builder) => {
         builder.storeCoins(request.value ?? toNano('0.03'));
         builder.storeRef(beginCell().store(storeParams(request.params)).endCell());
@@ -69,7 +76,7 @@ export function loadNftBatchMintItem<T>(slice: Slice, loadParams: LoadParams<T>)
 
 export function createNftMintItemValue<T>(
     storeParams?: (params: T) => (builder: Builder) => void,
-    loadParams?: (slice: Slice) => T
+    loadParams?: (slice: Slice) => T,
 ): DictionaryValue<NftMintItem<T>> {
     return {
         serialize(src: NftMintItem<T>, builder: Builder) {

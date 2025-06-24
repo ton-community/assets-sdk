@@ -1,5 +1,5 @@
-import {writeFileSync} from 'fs';
-import {resolve} from 'path';
+import { writeFileSync } from 'fs';
+import { resolve } from 'path';
 
 /**
  * A function that writes files to the given path.

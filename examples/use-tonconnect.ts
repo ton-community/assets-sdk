@@ -1,5 +1,6 @@
-import {Address, beginCell, Sender, SenderArguments, storeStateInit, toNano} from "@ton/core";
-import {AssetsSDK, createApi, PinataStorageParams} from "../src";
+import { Address, beginCell, Sender, SenderArguments, storeStateInit, toNano } from '@ton/core';
+
+import { AssetsSDK, createApi, PinataStorageParams } from '../src';
 
 /**
  * This is a mock for the TonConnect UI, which is used to send transactions.
@@ -18,14 +19,14 @@ declare class TonConnectUI {
     } | null;
 
     sendTransaction(params: {
-        validUntil: number,
-        from: string | undefined,
+        validUntil: number;
+        from: string | undefined;
         messages: {
-            address: string,
-            amount: string,
-            stateInit: string | undefined,
-            payload: string | undefined,
-        }[],
+            address: string;
+            amount: string;
+            stateInit: string | undefined;
+            payload: string | undefined;
+        }[];
     }): Promise<void>;
 }
 
@@ -34,7 +35,6 @@ declare class TonConnectUI {
  * This class is used to send messages using the TonConnect UI.
  */
 class TonConnectSender implements Sender {
-
     /**
      * The TonConnect UI instance.
      * @private
@@ -66,7 +66,7 @@ class TonConnectSender implements Sender {
         const validUntil = Math.floor(Date.now() / 1000) + 600;
 
         // The address of the recipient, should be in bounceable format for all smart contracts.
-        const address = args.to.toString({urlSafe: true, bounceable: true});
+        const address = args.to.toString({ urlSafe: true, bounceable: true });
 
         // The address of the sender, if available.
         const from = this.address?.toRawString();
@@ -94,12 +94,14 @@ class TonConnectSender implements Sender {
         await this.provider.sendTransaction({
             validUntil: validUntil,
             from: from,
-            messages: [{
-                address: address,
-                amount: amount,
-                stateInit: stateInit,
-                payload: payload,
-            }],
+            messages: [
+                {
+                    address: address,
+                    amount: amount,
+                    stateInit: stateInit,
+                    payload: payload,
+                },
+            ],
         });
     }
 }
@@ -114,7 +116,7 @@ async function main() {
     const storage: PinataStorageParams = {
         pinataApiKey: process.env.PINATA_API_KEY!,
         pinataSecretKey: process.env.PINATA_SECRET!,
-    }
+    };
 
     const sdk = AssetsSDK.create({
         api: api,
@@ -122,16 +124,22 @@ async function main() {
         sender: sender,
     });
 
+    // eslint-disable-next-line no-console
     console.log('Using wallet', sdk.sender?.address);
 
-    const jetton = await sdk.deployJetton({
-        name: 'Test jetton 4',
-        decimals: 9,
-        description: 'Test jetton',
-        symbol: 'TEST',
-    }, {adminAddress: sender.address, premintAmount: toNano('100')});
+    const jetton = await sdk.deployJetton(
+        {
+            name: 'Test jetton 4',
+            decimals: 9,
+            description: 'Test jetton',
+            symbol: 'TEST',
+        },
+        { adminAddress: sender.address, premintAmount: toNano('100') },
+    );
 
+    // eslint-disable-next-line no-console
     console.log('Created jetton with address', jetton.address);
 }
 
+// eslint-disable-next-line no-console
 main().catch(console.error);

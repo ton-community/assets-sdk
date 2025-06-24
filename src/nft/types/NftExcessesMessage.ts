@@ -1,15 +1,15 @@
-import {Builder, Slice} from "@ton/core";
-import {NFT_EXCESSES_OPCODE} from "../opcodes";
+import { Builder, Slice } from '@ton/core';
+
+import { NFT_EXCESSES_OPCODE } from '../opcodes';
 
 export type NftExcessesMessage = {
     queryId: bigint;
-}
+};
 
 export function storeNftExcessesMessage(message: NftExcessesMessage): (builder: Builder) => void {
     return (builder) => {
-        const {queryId} = message;
-        builder.storeUint(NFT_EXCESSES_OPCODE, 32)
-            .storeUint(queryId, 64);
+        const { queryId } = message;
+        builder.storeUint(NFT_EXCESSES_OPCODE, 32).storeUint(queryId, 64);
     };
 }
 

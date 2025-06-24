@@ -1,20 +1,22 @@
-import {createEnv, formatAddress, printInfo, retry} from "./common";
+import { readFile } from 'fs/promises';
+
 import inquirer from 'inquirer';
-import {readFile} from 'fs/promises';
-import {Address} from '@ton/core';
+import { Address } from '@ton/core';
+
+import { createEnv, formatAddress, printInfo, retry } from './common';
 
 type ImageUrl = {
-    kind: 'url',
-    url: string,
+    kind: 'url';
+    url: string;
 };
 
 type ImageFile = {
-    kind: 'file',
-    file: Buffer,
+    kind: 'file';
+    file: Buffer;
 };
 
 type NoImage = {
-    kind: 'none',
+    kind: 'none';
 };
 
 type Image = ImageUrl | ImageFile | NoImage;
@@ -28,47 +30,53 @@ type UserInput = {
 };
 
 async function promptForUserInput(params: { defaultOwner: string }): Promise<UserInput> {
-    const {address, owner, name, description, image} = await inquirer.prompt([{
-        name: 'address',
-        message: 'Enter collection address'
-    }, {
-        name: 'owner',
-        message: 'Enter item owner (default: your wallet address)',
-        default: params.defaultOwner,
-    }, {
-        name: 'name',
-        message: 'Enter item name',
-    }, {
-        name: 'description',
-        message: 'Enter item description',
-    }, {
-        name: 'image',
-        message: 'Enter image path or link',
-        async validate(input: string) {
-            if (input.startsWith('http://') || input.startsWith('https://')) {
-                const response = await fetch(input);
-                if (!response.ok) {
+    const { address, owner, name, description, image } = await inquirer.prompt([
+        {
+            name: 'address',
+            message: 'Enter collection address',
+        },
+        {
+            name: 'owner',
+            message: 'Enter item owner (default: your wallet address)',
+            default: params.defaultOwner,
+        },
+        {
+            name: 'name',
+            message: 'Enter item name',
+        },
+        {
+            name: 'description',
+            message: 'Enter item description',
+        },
+        {
+            name: 'image',
+            message: 'Enter image path or link',
+            async validate(input: string) {
+                if (input.startsWith('http://') || input.startsWith('https://')) {
+                    const response = await fetch(input);
+                    if (!response.ok) {
+                        return 'Image file not found';
+                    }
+                    return true;
+                }
+
+                try {
+                    await readFile(input);
+                    return true;
+                } catch (_) {
                     return 'Image file not found';
                 }
-                return true;
-            }
-
-            try {
-                await readFile(input);
-                return true;
-            } catch (e) {
-                return 'Image file not found';
-            }
-        }
-    }]);
+            },
+        },
+    ]);
 
     let formattedImage: Image;
     if (image === '') {
-        formattedImage = {kind: 'none'};
+        formattedImage = { kind: 'none' };
     } else if (image.startsWith('http://') || image.startsWith('https://')) {
-        formattedImage = {kind: 'url', url: image};
+        formattedImage = { kind: 'url', url: image };
     } else {
-        formattedImage = {kind: 'file', file: await readFile(image)};
+        formattedImage = { kind: 'file', file: await readFile(image) };
     }
 
     let formattedDescription: string | undefined;
@@ -86,9 +94,9 @@ async function promptForUserInput(params: { defaultOwner: string }): Promise<Use
 }
 
 export async function main() {
-    const {sdk, network, sender} = await createEnv();
-    const {address, owner, name, description, image} = await promptForUserInput({
-        defaultOwner: formatAddress(sender.address, network)
+    const { sdk, network, sender } = await createEnv();
+    const { address, owner, name, description, image } = await promptForUserInput({
+        defaultOwner: formatAddress(sender.address, network),
     });
 
     const collection = sdk.openSbtCollection(address);
@@ -97,18 +105,20 @@ export async function main() {
     if (image.kind === 'url') {
         uploadedImage = image.url;
     } else if (image.kind === 'file') {
-        uploadedImage = await retry(() => sdk.storage.uploadFile(image.file), {name: 'upload image'});
+        uploadedImage = await retry(() => sdk.storage.uploadFile(image.file), { name: 'upload image' });
     } else {
         uploadedImage = undefined;
     }
 
-    const content = Buffer.from(JSON.stringify({
-        name: name,
-        description: description,
-        image: uploadedImage,
-    }));
-    const contentUrl = await retry(() => sdk.storage.uploadFile(content), {name: 'upload image'});
-    const {nextItemIndex: index} = await collection.getData();
+    const content = Buffer.from(
+        JSON.stringify({
+            name: name,
+            description: description,
+            image: uploadedImage,
+        }),
+    );
+    const contentUrl = await retry(() => sdk.storage.uploadFile(content), { name: 'upload image' });
+    const { nextItemIndex: index } = await collection.getData();
     await collection.sendMint(sender, {
         index: index,
         owner: owner,
@@ -126,5 +136,5 @@ export async function main() {
         index: index,
         'sbt address': sbtItem.address,
     };
-    printInfo(sbtItemInfo, network)
+    printInfo(sbtItemInfo, network);
 }

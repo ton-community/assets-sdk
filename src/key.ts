@@ -1,4 +1,4 @@
-import {KeyPair, keyPairFromSecretKey, mnemonicToWalletKey} from "@ton/crypto";
+import { KeyPair, keyPairFromSecretKey, mnemonicToWalletKey } from '@ton/crypto';
 
 export async function importKey(key: string | string[] | Buffer): Promise<KeyPair> {
     if (typeof key === 'string') {

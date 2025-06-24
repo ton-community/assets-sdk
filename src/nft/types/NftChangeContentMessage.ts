@@ -1,12 +1,13 @@
-import {Builder, Cell, Slice} from "@ton/core";
-import {loadNftRoyaltyParams, NftRoyaltyParams, storeNftRoyaltyParams} from "./NftRoyaltyParams";
-import {NFT_CHANGE_CONTENT_OPCODE} from "../opcodes";
+import { Builder, Cell, Slice } from '@ton/core';
+
+import { loadNftRoyaltyParams, NftRoyaltyParams, storeNftRoyaltyParams } from './NftRoyaltyParams';
+import { NFT_CHANGE_CONTENT_OPCODE } from '../opcodes';
 
 export type NftChangeContentMessage = {
-    queryId: bigint,
-    newContent: Cell,
-    newRoyaltyParams: NftRoyaltyParams,
-}
+    queryId: bigint;
+    newContent: Cell;
+    newRoyaltyParams: NftRoyaltyParams;
+};
 
 export function storeNftChangeContentMessage(src: NftChangeContentMessage): (builder: Builder) => void {
     return (builder: Builder) => {

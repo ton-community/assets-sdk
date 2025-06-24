@@ -1,6 +1,7 @@
-import {Address} from "@ton/core";
-import {createEnv, printInfo} from "./common";
+import { Address } from '@ton/core';
 import inquirer from 'inquirer';
+
+import { createEnv, printInfo } from './common';
 
 type UserInput = {
     address: Address;
@@ -8,23 +9,26 @@ type UserInput = {
     amount: bigint;
 };
 
-
 async function promptJettonTransfer(): Promise<UserInput> {
-    const {address, recipient, amount} = await inquirer.prompt([{
-        name: 'address',
-        message: 'Enter jetton address',
-    }, {
-        name: 'recipient',
-        message: 'Enter recipient address',
-    }, {
-        name: 'amount',
-        type: 'number',
-        message: 'Enter amount in jetton units',
-        validate: (input: string) => {
-            const amount = BigInt(input);
-            return amount > 0 ? true : 'Amount must be a positive integer';
+    const { address, recipient, amount } = await inquirer.prompt([
+        {
+            name: 'address',
+            message: 'Enter jetton address',
         },
-    }]);
+        {
+            name: 'recipient',
+            message: 'Enter recipient address',
+        },
+        {
+            name: 'amount',
+            type: 'number',
+            message: 'Enter amount in jetton units',
+            validate: (input: string) => {
+                const amount = BigInt(input);
+                return amount > 0 ? true : 'Amount must be a positive integer';
+            },
+        },
+    ]);
 
     return {
         address: Address.parse(address),
@@ -34,8 +38,8 @@ async function promptJettonTransfer(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network, sender} = await createEnv();
-    const {address, recipient, amount} = await promptJettonTransfer();
+    const { sdk, network, sender } = await createEnv();
+    const { address, recipient, amount } = await promptJettonTransfer();
 
     const jetton = sdk.openJetton(address);
 

@@ -1,6 +1,7 @@
-import {Address} from "@ton/core";
-import {createEnv, printInfo} from "./common";
+import { Address } from '@ton/core';
 import inquirer from 'inquirer';
+
+import { createEnv, printInfo } from './common';
 
 type UserInput = {
     nftAddress: Address;
@@ -8,13 +9,16 @@ type UserInput = {
 };
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {item, recipient} = await inquirer.prompt([{
-        name: 'item',
-        message: 'Enter item address',
-    }, {
-        name: 'recipient',
-        message: 'Enter recipient address',
-    }]);
+    const { item, recipient } = await inquirer.prompt([
+        {
+            name: 'item',
+            message: 'Enter item address',
+        },
+        {
+            name: 'recipient',
+            message: 'Enter recipient address',
+        },
+    ]);
 
     return {
         nftAddress: Address.parse(item),
@@ -23,8 +27,8 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network, sender} = await createEnv();
-    const {nftAddress, recipient} = await promptForUserInput();
+    const { sdk, network, sender } = await createEnv();
+    const { nftAddress, recipient } = await promptForUserInput();
 
     const item = sdk.openNftItem(nftAddress);
     await item.send(sender, recipient);

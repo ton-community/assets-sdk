@@ -1,5 +1,6 @@
-import {Address, Builder, Slice} from "@ton/core";
-import {JETTON_BURN_NOTIFICATION_OPCODE} from "../opcodes";
+import { Address, Builder, Slice } from '@ton/core';
+
+import { JETTON_BURN_NOTIFICATION_OPCODE } from '../opcodes';
 
 // burn_notification query_id:uint64 amount:(VarUInteger 16)
 //        sender:MsgAddress response_destination:MsgAddress
@@ -9,7 +10,7 @@ export type JettonBurnNotificationMessage = {
     amount: bigint;
     sender: Address;
     responseDestination: Address | null;
-}
+};
 
 export function storeJettonBurnNotificationMessage(src: JettonBurnNotificationMessage) {
     return (builder: Builder) => {
@@ -18,7 +19,7 @@ export function storeJettonBurnNotificationMessage(src: JettonBurnNotificationMe
         builder.storeCoins(src.amount);
         builder.storeAddress(src.sender);
         builder.storeAddress(src.responseDestination);
-    }
+    };
 }
 
 export function loadJettonBurnNotificationMessage(slice: Slice): JettonBurnNotificationMessage {

@@ -1,12 +1,13 @@
-import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {loadNftRoyaltyParams, NftRoyaltyParams, storeNftRoyaltyParams} from "./NftRoyaltyParams";
+import { Address, beginCell, Builder, Cell, Slice } from '@ton/core';
+
+import { loadNftRoyaltyParams, NftRoyaltyParams, storeNftRoyaltyParams } from './NftRoyaltyParams';
 
 export type NftCollectionData = {
-    admin: Address,
-    content: Cell,
-    itemCode: Cell,
-    royalty: NftRoyaltyParams,
-}
+    admin: Address;
+    content: Cell;
+    itemCode: Cell;
+    royalty: NftRoyaltyParams;
+};
 
 export function storeNftCollectionData(src: NftCollectionData) {
     return (builder: Builder) => {

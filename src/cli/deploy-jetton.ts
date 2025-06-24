@@ -1,19 +1,21 @@
-import {createEnv, printInfo, retry} from "./common";
+import { readFile } from 'fs/promises';
+
 import inquirer from 'inquirer';
-import {readFile} from 'fs/promises';
+
+import { createEnv, printInfo, retry } from './common';
 
 type ImageUrl = {
-    kind: 'url',
-    url: string,
+    kind: 'url';
+    url: string;
 };
 
 type ImageFile = {
-    kind: 'file',
-    file: Buffer,
+    kind: 'file';
+    file: Buffer;
 };
 
 type NoImage = {
-    kind: 'none',
+    kind: 'none';
 };
 
 type Image = ImageUrl | ImageFile | NoImage;
@@ -27,52 +29,58 @@ type UserInput = {
 };
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {name, description, image, symbol, decimals} = await inquirer.prompt([{
-        name: 'name',
-        message: 'Enter jetton name',
-    }, {
-        name: 'description',
-        message: 'Enter jetton description',
-    }, {
-        name: 'image',
-        message: 'Enter image path or link',
-        async validate(input: string) {
-            if (input.startsWith('http://') || input.startsWith('https://')) {
-                const response = await fetch(input);
-                if (!response.ok) {
+    const { name, description, image, symbol, decimals } = await inquirer.prompt([
+        {
+            name: 'name',
+            message: 'Enter jetton name',
+        },
+        {
+            name: 'description',
+            message: 'Enter jetton description',
+        },
+        {
+            name: 'image',
+            message: 'Enter image path or link',
+            async validate(input: string) {
+                if (input.startsWith('http://') || input.startsWith('https://')) {
+                    const response = await fetch(input);
+                    if (!response.ok) {
+                        return 'Image file not found';
+                    }
+                    return true;
+                }
+
+                try {
+                    await readFile(input);
+                    return true;
+                } catch (_) {
                     return 'Image file not found';
                 }
-                return true;
-            }
-
-            try {
-                await readFile(input);
-                return true;
-            } catch (e) {
-                return 'Image file not found';
-            }
-        }
-    }, {
-        name: 'symbol',
-        message: 'Enter jetton symbol (for example TON)',
-    }, {
-        name: 'decimals',
-        message: 'Enter jetton decimals (for example 9)',
-        default: '9',
-        type: 'number',
-        validate: (value: string) => {
-            const amount = BigInt(value);
-            return amount >= 0 ? true : 'Amount must be a positive integer';
-        }
-    }]);
+            },
+        },
+        {
+            name: 'symbol',
+            message: 'Enter jetton symbol (for example TON)',
+        },
+        {
+            name: 'decimals',
+            message: 'Enter jetton decimals (for example 9)',
+            default: '9',
+            type: 'number',
+            validate: (value: string) => {
+                const amount = BigInt(value);
+                return amount >= 0 ? true : 'Amount must be a positive integer';
+            },
+        },
+    ]);
 
     let formattedImage: Image;
     if (image === '') {
-        formattedImage = {kind: 'none'};
+        formattedImage = { kind: 'none' };
     } else if (image.startsWith('http://') || image.startsWith('https://')) {
-        formattedImage = {kind: 'url', url: image};
+        formattedImage = { kind: 'url', url: image };
     } else {
-        formattedImage = {kind: 'file', file: await readFile(image)};
+        formattedImage = { kind: 'file', file: await readFile(image) };
     }
 
     let formattedDescription: string | undefined;
@@ -90,14 +98,14 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
-    const {name, description, image, symbol, decimals} = await promptForUserInput();
+    const { sdk, network } = await createEnv();
+    const { name, description, image, symbol, decimals } = await promptForUserInput();
 
     let uploadImage: string | undefined;
     if (image.kind === 'url') {
         uploadImage = image.url;
     } else if (image.kind === 'file') {
-        uploadImage = await retry(() => sdk.storage.uploadFile(image.file), {name: 'upload image'});
+        uploadImage = await retry(() => sdk.storage.uploadFile(image.file), { name: 'upload image' });
     } else {
         uploadImage = undefined;
     }
@@ -108,7 +116,7 @@ export async function main() {
         image: uploadImage,
         symbol: symbol,
         decimals: decimals,
-    }
+    };
     const jetton = await sdk.deployJetton(jettonParams);
 
     const jettonInfo = {
@@ -118,6 +126,6 @@ export async function main() {
         symbol: jettonParams.symbol,
         decimals: jettonParams.decimals,
         'jetton address': jetton.address,
-    }
+    };
     printInfo(jettonInfo, network);
 }

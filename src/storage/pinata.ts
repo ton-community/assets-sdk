@@ -1,11 +1,13 @@
-import {defer, Deferred} from "../utils";
-import type PinataClient from "@pinata/sdk";
-import type {Readable} from "stream";
-import {Storage} from "./storage";
+import type { Readable } from 'stream';
+
+import type PinataClient from '@pinata/sdk';
+
+import { defer, Deferred } from '../utils';
+import { Storage } from './storage';
 
 export interface PinataStorageParams {
-    pinataApiKey: string
-    pinataSecretKey: string
+    pinataApiKey: string;
+    pinataSecretKey: string;
 }
 
 export class PinataStorage implements Storage {
@@ -39,7 +41,7 @@ export class PinataStorage implements Storage {
         const result = await client.pinFileToIPFS(stream, {
             pinataMetadata: {
                 name: 'Assets SDK Jetton',
-            }
+            },
         });
         return 'ipfs://' + result.IpfsHash;
     }

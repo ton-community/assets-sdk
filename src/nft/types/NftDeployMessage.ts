@@ -1,4 +1,4 @@
-import {Address, Builder, Cell, Slice} from "@ton/core";
+import { Address, Builder, Cell, Slice } from '@ton/core';
 
 export type NftDeployMessage = {
     owner: Address;
@@ -7,9 +7,8 @@ export type NftDeployMessage = {
 
 export function storeNftDeployMessage(message: NftDeployMessage): (builder: Builder) => void {
     return (builder) => {
-        const {owner, content} = message;
-        builder.storeAddress(owner)
-            .storeRef(content);
+        const { owner, content } = message;
+        builder.storeAddress(owner).storeRef(content);
     };
 }
 

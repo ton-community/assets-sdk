@@ -1,5 +1,5 @@
-import {Cell, Dictionary, DictionaryValue, Slice} from "@ton/core";
-import {sha256_sync} from "@ton/crypto";
+import { Cell, Dictionary, DictionaryValue, Slice } from '@ton/core';
+import { sha256_sync } from '@ton/crypto';
 
 export interface ContentResolver {
     resolve(url: string): Promise<Buffer>;
@@ -28,14 +28,15 @@ export class DefaultContentResolver implements ContentResolver {
 type ContentType = 'onchain' | 'offchain' | 'semichain';
 
 export type DecodedContent = {
-    type: ContentType,
-    onchainFields?: Dictionary<bigint, Buffer>,
-    offchainFields?: Record<string, any>,
-    offchainUrl?: string,
+    type: ContentType;
+    onchainFields?: Dictionary<bigint, Buffer>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    offchainFields?: Record<string, any>;
+    offchainUrl?: string;
 };
 
 function loadSnake(s: Slice): Buffer {
-    const b: Buffer[] = []
+    const b: Buffer[] = [];
     while (s.remainingBits > 0 || s.remainingRefs > 0) {
         if (s.remainingBits % 8 !== 0) {
             throw new Error('Slice must contain an integer number of bytes');
@@ -96,6 +97,7 @@ const ContentDataValue: DictionaryValue<Buffer> = {
     },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function bufferToObj(b: Buffer): Record<string, any> {
     const parsed = JSON.parse(b.toString('utf-8'));
     if (typeof parsed !== 'object') {
@@ -147,10 +149,13 @@ export type Parser<T> = {
 };
 
 export type Parsers = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [k: string]: Parser<any>;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function decodeSimpleFields(dc: DecodedContent, parsers: Parsers): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out: any = {};
     for (const k in parsers) {
         if (dc.onchainFields !== undefined) {
@@ -173,7 +178,11 @@ export function decodeSimpleFields(dc: DecodedContent, parsers: Parsers): any {
 }
 
 export function decodeImage(dc: DecodedContent): string | Buffer | undefined {
-    if (dc.onchainFields !== undefined && dc.onchainFields.has(hashKey('image')) && dc.onchainFields.has(hashKey('image_data'))) {
+    if (
+        dc.onchainFields !== undefined &&
+        dc.onchainFields.has(hashKey('image')) &&
+        dc.onchainFields.has(hashKey('image_data'))
+    ) {
         throw new Error('Onchain fields contain both image and image_data');
     }
     if (dc.offchainFields !== undefined && 'image' in dc.offchainFields && 'image_data' in dc.offchainFields) {
@@ -215,8 +224,9 @@ export function decodeImage(dc: DecodedContent): string | Buffer | undefined {
 export const bufferToStr = (b: Buffer) => b.toString('utf-8');
 
 export type ParsedContent<T> = T & {
-    type: ContentType,
-    unknownOnchainFields: Dictionary<bigint, Buffer>,
-    unknownOffchainFields: Record<string, any>,
-    offchainUrl?: string,
+    type: ContentType;
+    unknownOnchainFields: Dictionary<bigint, Buffer>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    unknownOffchainFields: Record<string, any>;
+    offchainUrl?: string;
 };

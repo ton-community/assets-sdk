@@ -1,18 +1,19 @@
-import {Slice} from "@ton/core";
-import {SetKind, UnknownMessage} from "../../common/types";
-import {loadNftDeployMessage, NftDeployMessage} from "./NftDeployMessage";
-import {loadNftTransferMessage, NftTransferMessage} from "./NftTransferMessage";
-import {loadNftGetStaticDataMessage, NftGetStaticDataMessage} from "./NftGetStaticDataMessage";
-import {loadNftReportStaticDataMessage, NftReportStaticDataMessage} from "./NftReportStaticDataMessage";
-import {loadNftOwnerAssignedMessage, NftOwnerAssignedMessage} from "./NftOwnerAssignedMessage";
+import { Slice } from '@ton/core';
+
+import { SetKind, UnknownMessage } from '../../common/types';
+import { loadNftDeployMessage, NftDeployMessage } from './NftDeployMessage';
+import { loadNftTransferMessage, NftTransferMessage } from './NftTransferMessage';
+import { loadNftGetStaticDataMessage, NftGetStaticDataMessage } from './NftGetStaticDataMessage';
+import { loadNftReportStaticDataMessage, NftReportStaticDataMessage } from './NftReportStaticDataMessage';
+import { loadNftOwnerAssignedMessage, NftOwnerAssignedMessage } from './NftOwnerAssignedMessage';
 import {
     NFT_EXCESSES_OPCODE,
     NFT_GET_STATIC_DATA_OPCODE,
     NFT_OWNER_ASSIGNED_OPCODE,
     NFT_REPORT_STATIC_DATA_OPCODE,
-    NFT_TRANSFER_OPCODE
-} from "../opcodes";
-import {loadNftExcessesMessage, NftExcessesMessage} from "./NftExcessesMessage";
+    NFT_TRANSFER_OPCODE,
+} from '../opcodes';
+import { loadNftExcessesMessage, NftExcessesMessage } from './NftExcessesMessage';
 
 export type NftMessage =
     | SetKind<NftDeployMessage, 'nft_deploy'>
@@ -28,22 +29,22 @@ export function loadNftMessage(slice: Slice): NftMessage {
         const opcode = slice.preloadUint(32);
         switch (opcode) {
             case NFT_TRANSFER_OPCODE:
-                return {kind: 'nft_transfer', ...loadNftTransferMessage(slice)};
+                return { kind: 'nft_transfer', ...loadNftTransferMessage(slice) };
             case NFT_OWNER_ASSIGNED_OPCODE:
-                return {kind: 'owner_assigned', ...loadNftOwnerAssignedMessage(slice)};
+                return { kind: 'owner_assigned', ...loadNftOwnerAssignedMessage(slice) };
             case NFT_REPORT_STATIC_DATA_OPCODE:
-                return {kind: 'report_static_data', ...loadNftReportStaticDataMessage(slice)};
+                return { kind: 'report_static_data', ...loadNftReportStaticDataMessage(slice) };
             case NFT_GET_STATIC_DATA_OPCODE:
-                return {kind: 'get_static_data', ...loadNftGetStaticDataMessage(slice)};
+                return { kind: 'get_static_data', ...loadNftGetStaticDataMessage(slice) };
             case NFT_EXCESSES_OPCODE:
-                return {kind: 'excesses', ...loadNftExcessesMessage(slice)};
+                return { kind: 'excesses', ...loadNftExcessesMessage(slice) };
         }
 
-        if (slice.remainingBits === (256 + 11) && slice.remainingRefs === 1) {
-            return {kind: 'nft_deploy', ...loadNftDeployMessage(slice)};
+        if (slice.remainingBits === 256 + 11 && slice.remainingRefs === 1) {
+            return { kind: 'nft_deploy', ...loadNftDeployMessage(slice) };
         }
-    } catch (e) {
-    }
+        // eslint-disable-next-line no-empty
+    } catch (_) {}
 
-    return {kind: 'unknown'};
+    return { kind: 'unknown' };
 }

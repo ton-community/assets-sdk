@@ -1,9 +1,10 @@
-import {Address, Cell, Transaction} from "@ton/core";
-import {UnknownAction} from "../../common/types";
-import {loadNftCollectionMessage} from "./NftCollectionMessage";
-import {createNftItemParamsValue} from "./NftItemParams";
-import {NftRoyaltyParams} from "./NftRoyaltyParams";
-import {parseTransferTransaction, TransferAction} from "../../common/types/TransferAction";
+import { Address, Cell, Transaction } from '@ton/core';
+
+import { UnknownAction } from '../../common/types';
+import { loadNftCollectionMessage } from './NftCollectionMessage';
+import { createNftItemParamsValue } from './NftItemParams';
+import { NftRoyaltyParams } from './NftRoyaltyParams';
+import { parseTransferTransaction, TransferAction } from '../../common/types/TransferAction';
 
 export type NftMintItemAction = {
     kind: 'mint';
@@ -51,19 +52,19 @@ export function parseNftCollectionTransaction(tx: Transaction): NftCollectionAct
     }
 
     if (tx.description.type !== 'generic') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (!tx.inMessage) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.inMessage.info.type !== 'internal') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.description.computePhase.type !== 'vm') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.description.computePhase.exitCode !== 0) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
 
     const inMessage = loadNftCollectionMessage(tx.inMessage.body.beginParse(), createNftItemParamsValue());
@@ -83,7 +84,7 @@ export function parseNftCollectionTransaction(tx: Transaction): NftCollectionAct
         return {
             kind: 'mint_batch',
             queryId: inMessage.queryId,
-            items: inMessage.requests.map(item => ({
+            items: inMessage.requests.map((item) => ({
                 index: item.index,
                 owner: item.params.owner,
                 content: item.params.individualContent as Cell,
@@ -111,5 +112,5 @@ export function parseNftCollectionTransaction(tx: Transaction): NftCollectionAct
         };
     }
 
-    return {kind: 'unknown', transaction: tx};
+    return { kind: 'unknown', transaction: tx };
 }

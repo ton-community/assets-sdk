@@ -1,41 +1,42 @@
-import {Address, Cell, Transaction} from "@ton/core";
-import {loadJettonMinterMessage} from "./JettonMinterMessage";
-import {UnknownAction} from "../../common/types";
-import {parseTransferTransaction, TransferAction} from "../../common/types/TransferAction";
+import { Address, Cell, Transaction } from '@ton/core';
+
+import { loadJettonMinterMessage } from './JettonMinterMessage';
+import { UnknownAction } from '../../common/types';
+import { parseTransferTransaction, TransferAction } from '../../common/types/TransferAction';
 
 export type JettonMinterMintAction = {
-    kind: 'mint',
-    queryId: bigint,
-    amount: bigint,
-    recipient: Address,
-    responseAddress: Address | null,
-    forwardPayload: Cell | null,
-    forwardTonAmount: bigint,
-    value: bigint,
-    transaction: Transaction,
-}
+    kind: 'mint';
+    queryId: bigint;
+    amount: bigint;
+    recipient: Address;
+    responseAddress: Address | null;
+    forwardPayload: Cell | null;
+    forwardTonAmount: bigint;
+    value: bigint;
+    transaction: Transaction;
+};
 export type JettonMinterBurnAction = {
-    kind: 'burn',
-    queryId: bigint,
-    amount: bigint,
-    from: Address,
-    value: bigint,
-    transaction: Transaction,
-}
+    kind: 'burn';
+    queryId: bigint;
+    amount: bigint;
+    from: Address;
+    value: bigint;
+    transaction: Transaction;
+};
 export type JettonMinterChangeAdminAction = {
-    kind: 'change_admin',
-    queryId: bigint,
-    newAdmin: Address,
-    value: bigint,
-    transaction: Transaction,
-}
+    kind: 'change_admin';
+    queryId: bigint;
+    newAdmin: Address;
+    value: bigint;
+    transaction: Transaction;
+};
 export type JettonMinterChangeContentAction = {
-    kind: 'change_content',
-    queryId: bigint,
-    newContent: Cell,
-    value: bigint,
-    transaction: Transaction,
-}
+    kind: 'change_content';
+    queryId: bigint;
+    newContent: Cell;
+    value: bigint;
+    transaction: Transaction;
+};
 export type JettonMinterAction =
     | JettonMinterMintAction
     | JettonMinterBurnAction
@@ -51,19 +52,19 @@ export function parseJettonMinterTransaction(tx: Transaction): JettonMinterActio
     }
 
     if (tx.description.type !== 'generic') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (!tx.inMessage) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.inMessage.info.type !== 'internal') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.description.computePhase.type !== 'vm') {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
     if (tx.description.computePhase.exitCode !== 0) {
-        return {kind: 'unknown', transaction: tx};
+        return { kind: 'unknown', transaction: tx };
     }
 
     const inMessage = loadJettonMinterMessage(tx.inMessage.body.beginParse());
@@ -113,5 +114,5 @@ export function parseJettonMinterTransaction(tx: Transaction): JettonMinterActio
         };
     }
 
-    return {kind: 'unknown', transaction: tx};
+    return { kind: 'unknown', transaction: tx };
 }

@@ -1,10 +1,11 @@
-import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {ParamsValue} from "../../common/types/ParamsValue";
+import { Address, beginCell, Builder, Cell, Slice } from '@ton/core';
+
+import { ParamsValue } from '../../common/types/ParamsValue';
 
 export type SbtItemParams = {
-    owner: Address,
-    individualContent: Cell | string,
-    authority: Address | null,
+    owner: Address;
+    individualContent: Cell | string;
+    authority: Address | null;
 };
 export type SbtItemParamsValue = ParamsValue<SbtItemParams>;
 
@@ -25,7 +26,7 @@ export function loadSbtItemParams(slice: Slice): SbtItemParams {
     const content = slice.loadRef();
     const authority = slice.loadMaybeAddress();
 
-    return {owner, individualContent: content, authority};
+    return { owner, individualContent: content, authority };
 }
 
 export function createSbtItemParamsValue(): SbtItemParamsValue {

@@ -1,11 +1,11 @@
-import {Address as TONAddress} from '@ton/core';
+import { Address as TONAddress } from '@ton/core';
 import z from 'zod';
-import axios, {AxiosInstance} from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
-const Address = z.string().transform(v => TONAddress.parseRaw(v));
-const HexBuffer = z.string().transform(v => Buffer.from(v, 'hex'));
-const zBigint = z.union([z.number(), z.string()]).transform(v => BigInt(v));
-const zStrnum = z.union([z.number(), z.string()]).transform(v => Number(v));
+const Address = z.string().transform((v) => TONAddress.parseRaw(v));
+const HexBuffer = z.string().transform((v) => Buffer.from(v, 'hex'));
+const zBigint = z.union([z.number(), z.string()]).transform((v) => BigInt(v));
+const zStrnum = z.union([z.number(), z.string()]).transform((v) => Number(v));
 
 const ImagePreview = z.object({
     resolution: z.string(),
@@ -50,11 +50,13 @@ const NftItem = z.object({
     address: Address,
     index: zBigint,
     owner: z.optional(AccountAddress),
-    collection: z.optional(z.object({
-        address: Address,
-        name: z.string(),
-        description: z.string(),
-    })),
+    collection: z.optional(
+        z.object({
+            address: Address,
+            name: z.string(),
+            description: z.string(),
+        }),
+    ),
     verified: z.boolean(),
     metadata: z.record(z.any()),
     sale: z.optional(Sale),
@@ -125,31 +127,35 @@ const NftItemTransferAction = z.object({
 
 const ActionStatus = z.union([z.literal('ok'), z.literal('failed')]);
 
-const ActionSpecificNftItemTransfer = z.object({
-    type: z.literal('NftItemTransfer'),
-    status: ActionStatus,
-    NftItemTransfer: NftItemTransferAction,
-}).transform(v => ({
-    status: v.status,
-    ...v.NftItemTransfer,
-}));
+const ActionSpecificNftItemTransfer = z
+    .object({
+        type: z.literal('NftItemTransfer'),
+        status: ActionStatus,
+        NftItemTransfer: NftItemTransferAction,
+    })
+    .transform((v) => ({
+        status: v.status,
+        ...v.NftItemTransfer,
+    }));
 
-const AccountEventGeneric = <T extends z.ZodTypeAny>(t: T) => z.object({
-    event_id: z.string(),
-    account: AccountAddress,
-    timestamp: z.number(),
-    actions: z.array(t),
-    is_scam: z.boolean(),
-    lt: zBigint,
-    in_progress: z.boolean(),
-});
+const AccountEventGeneric = <T extends z.ZodTypeAny>(t: T) =>
+    z.object({
+        event_id: z.string(),
+        account: AccountAddress,
+        timestamp: z.number(),
+        actions: z.array(t),
+        is_scam: z.boolean(),
+        lt: zBigint,
+        in_progress: z.boolean(),
+    });
 
 const AccountEventNftItemTransfer = AccountEventGeneric(ActionSpecificNftItemTransfer);
 
-const AccountEventsGeneric = <T extends z.ZodTypeAny>(t: T) => z.object({
-    events: z.array(t),
-    next_from: zBigint,
-});
+const AccountEventsGeneric = <T extends z.ZodTypeAny>(t: T) =>
+    z.object({
+        events: z.array(t),
+        next_from: zBigint,
+    });
 
 const AccountEventsNftItemTransfer = AccountEventsGeneric(AccountEventNftItemTransfer);
 
@@ -187,107 +193,148 @@ const rawAddress = (address: TONAddress | string) => {
 export class TonAPI {
     readonly instance: AxiosInstance;
 
-    constructor(params?: {
-        baseURL?: string,
-        token?: string,
-    }) {
+    constructor(params?: { baseURL?: string; token?: string }) {
         this.instance = axios.create({
             baseURL: params?.baseURL ?? 'https://tonapi.io',
-            headers: params?.token === undefined ? {} : {
-                'Authorization': 'Bearer ' + params.token,
-            },
+            headers:
+                params?.token === undefined
+                    ? {}
+                    : {
+                          Authorization: 'Bearer ' + params.token,
+                      },
         });
     }
 
-    async getNftCollections(params?: {
-        limit?: number,
-        offset?: number,
-    }) {
-        return NftCollections.parse((await this.instance.get('/v2/nfts/collections', {
-            params,
-        })).data).nft_collections;
+    async getNftCollections(params?: { limit?: number; offset?: number }) {
+        return NftCollections.parse(
+            (
+                await this.instance.get('/v2/nfts/collections', {
+                    params,
+                })
+            ).data,
+        ).nft_collections;
     }
 
     async getNftCollection(collection: TONAddress | string) {
         return NftCollection.parse((await this.instance.get(`/v2/nfts/collections/${rawAddress(collection)}`)).data);
     }
 
-    async getNftCollectionItems(collection: TONAddress | string, params?: {
-        limit?: number,
-        offset?: number,
-    }) {
-        return NftItems.parse((await this.instance.get(`/v2/nfts/collections/${rawAddress(collection)}/items`, {
-            params,
-        })).data).nft_items;
+    async getNftCollectionItems(
+        collection: TONAddress | string,
+        params?: {
+            limit?: number;
+            offset?: number;
+        },
+    ) {
+        return NftItems.parse(
+            (
+                await this.instance.get(`/v2/nfts/collections/${rawAddress(collection)}/items`, {
+                    params,
+                })
+            ).data,
+        ).nft_items;
     }
 
     async getNftItems(items: (TONAddress | string)[]) {
-        return NftItems.parse((await this.instance.post(`/v2/nfts/_bulk`, {
-            account_ids: items.map(rawAddress),
-        })).data).nft_items;
+        return NftItems.parse(
+            (
+                await this.instance.post(`/v2/nfts/_bulk`, {
+                    account_ids: items.map(rawAddress),
+                })
+            ).data,
+        ).nft_items;
     }
 
     async getNftItem(item: TONAddress | string) {
         return NftItem.parse((await this.instance.get(`/v2/nfts/${rawAddress(item)}`)).data);
     }
 
-    async getJettons(params?: {
-        limit?: number,
-        offset?: number,
-    }) {
-        return Jettons.parse((await this.instance.get('/v2/jettons', {
-            params,
-        })).data).jettons;
+    async getJettons(params?: { limit?: number; offset?: number }) {
+        return Jettons.parse(
+            (
+                await this.instance.get('/v2/jettons', {
+                    params,
+                })
+            ).data,
+        ).jettons;
     }
 
     async getJetton(jettonMaster: TONAddress | string) {
         return JettonInfo.parse((await this.instance.get(`/v2/jettons/${rawAddress(jettonMaster)}`)).data);
     }
 
-    async getJettonHolders(jettonMaster: TONAddress | string, params?: {
-        limit?: number,
-        offset?: number,
-    }) {
-        return JettonHolders.parse((await this.instance.get(`/v2/jettons/${rawAddress(jettonMaster)}/holders`, {
-            params,
-        })).data).addresses;
+    async getJettonHolders(
+        jettonMaster: TONAddress | string,
+        params?: {
+            limit?: number;
+            offset?: number;
+        },
+    ) {
+        return JettonHolders.parse(
+            (
+                await this.instance.get(`/v2/jettons/${rawAddress(jettonMaster)}/holders`, {
+                    params,
+                })
+            ).data,
+        ).addresses;
     }
 
-    async getNftItemTransferHistory(item: TONAddress | string, params?: {
-        before_lt?: bigint,
-        limit?: number,
-        start_date?: number,
-        end_date?: number,
-    }) {
-        return AccountEventsNftItemTransfer.parse((await this.instance.get(`/v2/nfts/${rawAddress(item)}/history`, {
-            params: {
-                limit: 100,
-                ...params,
-            },
-        })).data);
+    async getNftItemTransferHistory(
+        item: TONAddress | string,
+        params?: {
+            before_lt?: bigint;
+            limit?: number;
+            start_date?: number;
+            end_date?: number;
+        },
+    ) {
+        return AccountEventsNftItemTransfer.parse(
+            (
+                await this.instance.get(`/v2/nfts/${rawAddress(item)}/history`, {
+                    params: {
+                        limit: 100,
+                        ...params,
+                    },
+                })
+            ).data,
+        );
     }
 
-    async getAccountNfts(account: TONAddress | string, params?: {
-        collection?: TONAddress | string,
-        limit?: number,
-        offset?: number,
-        indirect_ownership?: boolean,
-    }) {
-        return NftItems.parse((await this.instance.get(`/v2/accounts/${rawAddress(account)}/nfts`, {
-            params: {
-                ...params,
-                collection: params?.collection === undefined ? undefined : rawAddress(params.collection),
-            },
-        })).data).nft_items;
+    async getAccountNfts(
+        account: TONAddress | string,
+        params?: {
+            collection?: TONAddress | string;
+            limit?: number;
+            offset?: number;
+            indirect_ownership?: boolean;
+        },
+    ) {
+        return NftItems.parse(
+            (
+                await this.instance.get(`/v2/accounts/${rawAddress(account)}/nfts`, {
+                    params: {
+                        ...params,
+                        collection: params?.collection === undefined ? undefined : rawAddress(params.collection),
+                    },
+                })
+            ).data,
+        ).nft_items;
     }
 
-    async getAccountJettons(account: TONAddress | string, params?: {
-        currencies?: string[],
-    }) {
-        return JettonBalances.parse((await this.instance.get(`/v2/accounts/${rawAddress(account)}/jettons`, {
-            params: {
-                currencies: params?.currencies === undefined ? undefined : params.currencies.join(','),
-            },
-        })).data).balances;
+    async getAccountJettons(
+        account: TONAddress | string,
+        params?: {
+            currencies?: string[];
+        },
+    ) {
+        return JettonBalances.parse(
+            (
+                await this.instance.get(`/v2/accounts/${rawAddress(account)}/jettons`, {
+                    params: {
+                        currencies: params?.currencies === undefined ? undefined : params.currencies.join(','),
+                    },
+                })
+            ).data,
+        ).balances;
     }
 }

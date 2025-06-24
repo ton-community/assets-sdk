@@ -1,16 +1,19 @@
-import {createEnv, printInfo} from "./common";
-import {Address} from "@ton/core";
-import inquirer from "inquirer";
+import { Address } from '@ton/core';
+import inquirer from 'inquirer';
+
+import { createEnv, printInfo } from './common';
 
 type UserInput = {
     jettonAddress: Address;
-}
+};
 
 async function promptForUserInput(): Promise<UserInput> {
-    const {jetton} = await inquirer.prompt([{
-        name: 'jetton',
-        message: 'Enter jetton address',
-    }]);
+    const { jetton } = await inquirer.prompt([
+        {
+            name: 'jetton',
+            message: 'Enter jetton address',
+        },
+    ]);
 
     return {
         jettonAddress: Address.parse(jetton),
@@ -18,8 +21,8 @@ async function promptForUserInput(): Promise<UserInput> {
 }
 
 export async function main() {
-    const {sdk, network} = await createEnv();
-    const {jettonAddress} = await promptForUserInput();
+    const { sdk, network } = await createEnv();
+    const { jettonAddress } = await promptForUserInput();
 
     const jetton = sdk.openJetton(jettonAddress);
     const jettonData = await jetton.getData();

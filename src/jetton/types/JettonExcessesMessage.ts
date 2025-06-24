@@ -1,16 +1,17 @@
-import {Builder, Slice} from "@ton/core";
-import {JETTON_EXCESSES_OPCODE} from "../opcodes";
+import { Builder, Slice } from '@ton/core';
+
+import { JETTON_EXCESSES_OPCODE } from '../opcodes';
 
 // excesses query_id:uint64 = InternalMsgBody;
 export type JettonExcessesMessage = {
     queryId: bigint;
-}
+};
 
 export function storeJettonExcessesMessage(src: JettonExcessesMessage): (builder: Builder) => void {
     return (builder: Builder) => {
         builder.storeUint(JETTON_EXCESSES_OPCODE, 32);
         builder.storeUint(src.queryId, 64);
-    }
+    };
 }
 
 export function loadJettonExcessesMessage(slice: Slice): JettonExcessesMessage {
@@ -20,6 +21,6 @@ export function loadJettonExcessesMessage(slice: Slice): JettonExcessesMessage {
 
     let queryId = slice.loadUintBig(64);
     return {
-        queryId
+        queryId,
     };
 }

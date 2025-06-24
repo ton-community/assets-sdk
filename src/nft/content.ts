@@ -1,13 +1,14 @@
-import {Dictionary} from "@ton/core";
-import z from "zod";
-import {bufferToStr, DecodedContent, decodeImage, decodeSimpleFields, ParsedContent} from "../content";
+import { Dictionary } from '@ton/core';
+import z from 'zod';
+
+import { bufferToStr, DecodedContent, decodeImage, decodeSimpleFields, ParsedContent } from '../content';
 
 export interface NftContent {
-    uri?: string,
-    name?: string,
-    description?: string,
-    image?: string,
-    imageData?: Buffer,
+    uri?: string;
+    name?: string;
+    description?: string;
+    image?: string;
+    imageData?: Buffer;
 }
 
 export function nftContentToInternal(content: NftContent) {
@@ -21,9 +22,9 @@ export function nftContentToInternal(content: NftContent) {
 }
 
 export type ParsedNftContent = {
-    name?: string,
-    description?: string,
-    image?: string | Buffer,
+    name?: string;
+    description?: string;
+    image?: string | Buffer;
 };
 
 export function parseNftContent(dc: DecodedContent): ParsedContent<ParsedNftContent> {

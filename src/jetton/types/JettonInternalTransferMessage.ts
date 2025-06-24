@@ -1,5 +1,6 @@
-import {Address, beginCell, Builder, Cell, Slice} from "@ton/core";
-import {JETTON_INTERNAL_TRANSFER_OPCODE} from "../opcodes";
+import { Address, Builder, Cell, Slice } from '@ton/core';
+
+import { JETTON_INTERNAL_TRANSFER_OPCODE } from '../opcodes';
 
 // internal_transfer  query_id:uint64 amount:(VarUInteger 16) from:MsgAddress
 //                      response_address:MsgAddress
@@ -7,13 +8,13 @@ import {JETTON_INTERNAL_TRANSFER_OPCODE} from "../opcodes";
 //                      forward_payload:(Either Cell ^Cell)
 //                      = InternalMsgBody;
 export type JettonInternalTransferMessage = {
-    queryId: bigint,
-    amount: bigint,
-    from: Address,
-    responseAddress: Address | null,
-    forwardTonAmount: bigint,
-    forwardPayload: Cell | null,
-}
+    queryId: bigint;
+    amount: bigint;
+    from: Address;
+    responseAddress: Address | null;
+    forwardTonAmount: bigint;
+    forwardPayload: Cell | null;
+};
 
 export function storeJettonInternalTransferMessage(src: JettonInternalTransferMessage) {
     return (builder: Builder) => {
@@ -24,7 +25,7 @@ export function storeJettonInternalTransferMessage(src: JettonInternalTransferMe
         builder.storeAddress(src.responseAddress);
         builder.storeCoins(src.forwardTonAmount);
         builder.storeMaybeRef(src.forwardPayload);
-    }
+    };
 }
 
 export function loadJettonInternalTransferMessage(slice: Slice): JettonInternalTransferMessage {
@@ -47,5 +48,5 @@ export function loadJettonInternalTransferMessage(slice: Slice): JettonInternalT
         responseAddress,
         forwardTonAmount,
         forwardPayload,
-    }
+    };
 }

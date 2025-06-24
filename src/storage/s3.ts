@@ -1,15 +1,15 @@
-import {defer, Deferred} from "../utils";
-import type {S3} from "@aws-sdk/client-s3";
-import {Storage} from "./storage";
+import type { S3 } from '@aws-sdk/client-s3';
+
+import { defer, Deferred } from '../utils';
+import { Storage } from './storage';
 
 export interface S3StorageParams {
-    s3AccessKeyId: string
-    s3SecretAccessKey: string
-    s3Bucket: string
+    s3AccessKeyId: string;
+    s3SecretAccessKey: string;
+    s3Bucket: string;
 }
 
 export class S3Storage implements Storage {
-
     private readonly accessKeyId: string;
 
     private readonly secretAccessKey: string;
