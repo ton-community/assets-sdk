@@ -1,6 +1,6 @@
 # Contributing
 
-This agreement is for collaboration, it may not be detailed enough, if it is not clear how to do what you want, this is a normal situation, just ask your colleagues
+We highly appreciate your contributions to the project ❤️
 
 ## Main flow
 
@@ -9,15 +9,14 @@ This agreement is for collaboration, it may not be detailed enough, if it is not
 ```shell
 git clone git@github.com:ton-community/assets-sdk.git
 cd assets-sdk
-git checkout -b name-of-feature origin/main
+git checkout -b name-of-your-feature origin/main
 ```
 
 ### Step 2 — write code
 
-Coding and testing local
+Write the code for your change, test it locally, then commit
 
 > Git history: work log vs recipe https://www.bitsnbites.eu/git-history-work-log-vs-recipe/
-
 Use [Conventional Commits](https://www.conventionalcommits.org/)
 
 ```shell
@@ -30,34 +29,32 @@ or
 git commit --message "fix: hide password display when searching for a user"
 ```
 
-### Step 3 — make fork
+### Step 3 — make a fork
 
-Follow by link for make fork:
-https://github.com/ton-community/assets-sdk/fork
-
-Setup your remote
+Go [here](https://github.com/ton-community/assets-sdk/fork) to make a fork, then setup your remote:
 
 ```bash
-git remote add self url_your_fork
+git remote add self url_of_your_fork
 ```
 
-### Step 4 — make pull requests
+### Step 4 — make a pull request
 
-Push and create pull requests
+Push:
 
 ```shell
-git push --set-upstream self name-of-feature
+git push --set-upstream self name-of-your-feature
 ```
 
-Follow by link:
+Then create a pull request from the [pull requests page](https://github.com/ton-community/assets-sdk/pulls) or directly:
 
 ```shell
-https://github.com/ton-community/assets-sdk/pull/new/name-of-feature
+https://github.com/ton-community/assets-sdk/pull/new/name-of-your-feature
 ```
+(note the name of your branch in the URL)
 
-### Step 5 — update branch from main
+### Step 5 — update your branch from main
 
-This step may be necessary in case your colleagues suggest additional changes after reviewing the code.
+This step may be necessary in case the `main`/`develop` branch has changed since you created your branch
 
 > [!NOTE]
 > A tidy, linear Git history  https://www.bitsnbites.eu/a-tidy-linear-git-history/
@@ -69,18 +66,22 @@ git fetch --prune origin
 git rebase --autostash --ignore-date origin/main
 ```
 > [!WARNING]
-> Please note that you get the current state of the main branch from the **origin** remote for doing push to **self**
+> Please note that you get the current state of the `main` branch from the **origin** remote for pushing to your own branch
 
-During the rebase, there may be conflicts, they need to be resolved and after the decision to continue the rebase:
+During the rebase, there may be conflicts, they need to be resolved; once the conflicts are resolved, you can continue the rebase:
 
 ```shell
 git rebase --continue
 ```
 
-Upload the updated working branch to the repository, given that we changed the history, this should be done with the force option:
+Upload the updated working branch to the repository; given that we changed the history, this should be done with the force option:
 
 ```shell
-git push --force --set-upstream self name-of-feature
+git push --force --set-upstream self name-of-your-feature
 ```
 
 More details can be found in the tutorial: [git rebase](https://www.atlassian.com/git/tutorials/rewriting-history/git-rebase)
+
+## All set 🎉
+
+Thanks for your time and code!
