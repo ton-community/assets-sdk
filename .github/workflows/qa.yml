@@ -2,11 +2,21 @@ name: qa
 
 on:
   push:
+    paths-ignore:
+      - '.github/workflows/reward.yml'
+      - '.github/workflows/reward-merged-prs.yml'
+      - '.github/ISSUE_TEMPLATE/*'
+      - '*.md'
     branches:
-      - master
+      - main
   pull_request:
+    paths-ignore:
+      - '.github/workflows/reward.yml'
+      - '.github/workflows/reward-merged-prs.yml'
+      - '.github/ISSUE_TEMPLATE/*'
+      - '*.md'
     branches:
-      - master
+      - main
 
 jobs:
   lint:

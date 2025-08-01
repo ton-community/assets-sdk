@@ -29,7 +29,7 @@ describe('sdk', () => {
 
     beforeAll(async () => {
         const blockchain = await Blockchain.create();
-        const treasury: SandboxContract<TreasuryContract> = await blockchain.treasury('sender')
+        const treasury: SandboxContract<TreasuryContract> = await blockchain.treasury('sender');
         const api = new Api(blockchain);
         const storage = new FakeStorage();
         const sender = blockchain.sender(treasury.address);
